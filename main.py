@@ -4,6 +4,8 @@ import asyncio
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from trading.strategy.ema_adx_macd import analyze_ema_adx_macd
 from trading.get_by_figi import sfb_name_by_figi
+from tinkoff.invest import Client
+from config import personal_data
 
 loop = asyncio.get_event_loop()
 bot = Bot(BOT_TOKEN, parse_mode="HTML")
@@ -13,6 +15,13 @@ if __name__ == "__main__":
 
     from main import dp
     from bot.handlers.bot_handlers import start
+
+    with Client(personal_data.TOKEN) as client:
+
+        portf = client.users.get_accounts()
+        for i in portf.accounts:
+            print(f"ID - {i.id}")
+            print(f"Название - {i.name}")
 
     f = open("config/str1_status.txt", "r")
 
