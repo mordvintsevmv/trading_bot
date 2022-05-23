@@ -1,0 +1,9 @@
+aiogram
+tinkoff-investments
+ta
+pandas
+matplotlib
+python-dotenv
+aioschedule
+dataframe_image
+
