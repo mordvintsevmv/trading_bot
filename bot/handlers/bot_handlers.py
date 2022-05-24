@@ -26,7 +26,7 @@ async def start(dp):
 
 
 async def schedule_ema_adx_macd():
-    aioschedule.every().minute.do(start_ema_adx_macd)
+    aioschedule.every(15).minuteы.do(start_ema_adx_macd)
 
     while True:
         await aioschedule.run_pending()
