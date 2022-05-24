@@ -157,7 +157,7 @@ async def s_finish(message: types.Message, state: FSMContext):
             f"Продать акции {user_data['s_chosen_figi']} в количесвте {user_data['s_chosen_quantity']} по цене {message.text}.\n"
             f"Суммарно на {round(float(user_data['s_chosen_quantity'])*share_lot_figi(user_data['s_chosen_figi'])*float(message.text),3)}",
             reply_markup=start_menu)
-        await sell_sfb(figi = user_data['s_chosen_figi'], price=float(message.text), quantity_lots=int(user_data['s_chosen_quantity']))
+        sell_sfb(figi = user_data['s_chosen_figi'], price=float(message.text), quantity_lots=int(user_data['s_chosen_quantity']))
         await state.finish()
         return
 

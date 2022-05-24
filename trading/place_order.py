@@ -16,7 +16,7 @@ from trading.trade_help import total_quantity
 '''
 
 
-async def buy_sfb(figi, price, quantity_lots):
+def buy_sfb(figi, price, quantity_lots):
     with Client(personal_data.TOKEN) as client:
 
         if price > 0.0:
@@ -47,7 +47,7 @@ async def buy_sfb(figi, price, quantity_lots):
 '''
 
 
-async def sell_sfb(figi, price, quantity_lots):
+def sell_sfb(figi, price, quantity_lots):
     with Client(personal_data.TOKEN) as client:
 
         if price > 0.0:

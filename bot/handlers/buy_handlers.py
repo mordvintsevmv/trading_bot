@@ -156,7 +156,7 @@ async def b_finish(message: types.Message, state: FSMContext):
         user_data = await state.get_data()
         await message.answer(
             f"Купить акции {user_data['b_chosen_figi']} в количесвте {user_data['b_chosen_quantity']} по цене {message.text}.\n",reply_markup=start_menu)
-        await buy_sfb(figi = user_data['b_chosen_figi'], price = float(message.text), quantity_lots = int(user_data['b_chosen_quantity']))
+        buy_sfb(figi = user_data['b_chosen_figi'], price = float(message.text), quantity_lots = int(user_data['b_chosen_quantity']))
         await state.finish()
 
     # В случае ошибки повторим запрос
