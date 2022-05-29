@@ -1,5 +1,5 @@
 from tinkoff.invest import Client
-from config import personal_data
+from config.personal_data import get_account, get_token
 from trading.trade_help import total_quantity
 
 """
@@ -22,8 +22,8 @@ from trading.trade_help import total_quantity
     Функция для получения ценной бумаги по FIGI
 '''
 
-def sfb_by_figi(figi):
-    with Client(personal_data.TOKEN) as client:
+def sfb_by_figi(figi, user_id):
+    with Client(get_token(user_id)) as client:
 
         try:
             sfb = client.instruments.get_instrument_by(id_type=1,id=figi).instrument
@@ -39,8 +39,8 @@ def sfb_by_figi(figi):
 '''
 
 
-def sfb_name_by_figi(figi):
-    with Client(personal_data.TOKEN) as client:
+def sfb_name_by_figi(figi, user_id):
+    with Client(get_token(user_id)) as client:
 
         try:
             sfb_name = client.instruments.get_instrument_by(id_type=1, id=figi).instrument.name
@@ -56,8 +56,8 @@ def sfb_name_by_figi(figi):
 '''
 
 
-def sfb_incr_by_figi(figi):
-    with Client(personal_data.TOKEN) as client:
+def sfb_incr_by_figi(figi, user_id):
+    with Client(get_token(user_id)) as client:
 
         try:
             sfb_incr = total_quantity(client.instruments.get_instrument_by(id_type=1, id=figi).instrument.min_price_increment)

@@ -1,6 +1,6 @@
 from main import dp
 from aiogram.types import Message
-from bot.keyboards.start_menu_keyboard import start_menu
+from bot.keyboards.start_menu_keyboard import get_start_menu
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup
@@ -10,6 +10,7 @@ from trading.get_by_figi import sfb_name_by_figi
 from trading.trade_help import in_shares
 from trading.get_info import get_price_figi
 from trading.place_order import buy_sfb
+
 """
 
     Тут представлены все хэндлеры, которые отвечают за покупку бумаг
@@ -40,10 +41,10 @@ async def b_choose_figi(message: Message, state: FSMContext):
 
     # Покажем информацию о выбранных бумагах
     await message.answer(
-        f"BBG004730ZJ9 - {sfb_name_by_figi('BBG004730ZJ9')}\n"
-        f"BBG0014PFYM2 - {sfb_name_by_figi('BBG0014PFYM2')}\n"
-        f"BBG000K3STR7 - {sfb_name_by_figi('BBG000K3STR7')}\n"
-        f"BBG001M2SC01 - {sfb_name_by_figi('BBG001M2SC01')}\n"
+        f"BBG004730ZJ9 - {sfb_name_by_figi('BBG004730ZJ9', user_id=message.from_user.id)}\n"
+        f"BBG0014PFYM2 - {sfb_name_by_figi('BBG0014PFYM2', user_id=message.from_user.id)}\n"
+        f"BBG000K3STR7 - {sfb_name_by_figi('BBG000K3STR7', user_id=message.from_user.id)}\n"
+        f"BBG001M2SC01 - {sfb_name_by_figi('BBG001M2SC01', user_id=message.from_user.id)}\n"
         )
 
     # Добваим значения в клавиатуру
@@ -69,7 +70,7 @@ async def b_choose_figi(message: Message, state: FSMContext):
 async def b_choose_quantity(message: Message, state: FSMContext):
 
     # Проверяем, существует ли такая акция
-    if in_shares(message.text):
+    if in_shares(message.text, user_id=message.from_user.id):
 
         # Создаём клавиатуру с примерами лотов
         lot_keyboard = ReplyKeyboardMarkup()
@@ -80,14 +81,14 @@ async def b_choose_quantity(message: Message, state: FSMContext):
         lot_keyboard.add(f"Отмена")
 
         # Аключаем клавиатуру
-        await message.answer(f"Бумаг в лоте: {share_lot_figi(message.text)}",reply_markup=lot_keyboard)
+        await message.answer(f"Бумаг в лоте: {share_lot_figi(message.text, user_id=message.from_user.id)}")
 
-        price = get_price_figi(message.text)
+        price = get_price_figi(message.text, user_id=message.from_user.id)
 
         # Выведем всю информации о выбранной бумаге
         await message.answer(f"Средняя стоимость бумаги: {round(price, 6)}")
-        await message.answer(f"Примерная стоимость лота: {round(price*share_lot_figi(message.text), 6)}")
-        await message.answer("Укажите количество лотов для покупки:")
+        await message.answer(f"Примерная стоимость лота: {round(price*share_lot_figi(message.text, user_id=message.from_user.id), 6)}")
+        await message.answer("Укажите количество лотов для покупки:", reply_markup=lot_keyboard)
 
         # Запишем в память
         await state.update_data(b_chosen_figi=message.text)
@@ -117,7 +118,7 @@ async def b_choose_price(message: Message, state: FSMContext):
         await state.update_data(b_chosen_quantity=message.text)
 
         user_data = await state.get_data()
-        price = get_price_figi(user_data['b_chosen_figi'])
+        price = get_price_figi(user_data['b_chosen_figi'], user_id=message.from_user.id)
 
         # Создадим клавиатуру с примерами цены на бумагу
         price_keyboard = ReplyKeyboardMarkup()
@@ -147,16 +148,25 @@ async def b_choose_price(message: Message, state: FSMContext):
 async def b_finish(message: types.Message, state: FSMContext):
 
     user_data = await state.get_data()
-    price = get_price_figi(user_data['b_chosen_figi'])
+    price = get_price_figi(user_data['b_chosen_figi'], user_id=message.from_user.id)
 
     # Проверяем, что цена находится в разумных границах
-    if price * 1.20 > float(message.text) > price * 0.80:
-
-        # Продадим бумаги и выведем мообщение
+    if float(message.text) == 0.0:
+        # Продадим бумаги и выведем cообщение
         user_data = await state.get_data()
         await message.answer(
-            f"Купить акции {user_data['b_chosen_figi']} в количесвте {user_data['b_chosen_quantity']} по цене {message.text}.\n",reply_markup=start_menu)
-        buy_sfb(figi = user_data['b_chosen_figi'], price = float(message.text), quantity_lots = int(user_data['b_chosen_quantity']))
+            f"Купить акции {user_data['b_chosen_figi']} в количестве {user_data['b_chosen_quantity']} по лучшей цене.\n",
+            reply_markup=get_start_menu(message.from_user.id))
+        buy_sfb(figi=user_data['b_chosen_figi'], price=0.0,
+                quantity_lots=int(user_data['b_chosen_quantity']), user_id=message.from_user.id)
+        await state.finish()
+    elif price * 1.20 > float(message.text) > price * 0.80:
+
+        # Продадим бумаги и выведем сообщение
+        user_data = await state.get_data()
+        await message.answer(
+            f"Купить акции {user_data['b_chosen_figi']} в количестве {user_data['b_chosen_quantity']} по цене {message.text}.\n",reply_markup=get_start_menu(message.from_user.id))
+        buy_sfb(figi = user_data['b_chosen_figi'], price = float(message.text), quantity_lots = int(user_data['b_chosen_quantity']), user_id=message.from_user.id, via="bot")
         await state.finish()
 
     # В случае ошибки повторим запрос

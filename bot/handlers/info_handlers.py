@@ -5,6 +5,7 @@ from aiogram.dispatcher.filters import Text
 from trading.get_by_figi import sfb_name_by_figi
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from trading.place_order import cancel_order
+from config.personal_data import get_account_type
 
 """
 
@@ -21,7 +22,8 @@ from trading.place_order import cancel_order
 
 @dp.message_handler(Text(contains="баланс", ignore_case=True))
 async def get_balance(message: Message):
-    cur_df = get_all_currency()
+
+    cur_df = get_all_currency(message.from_user.id)
 
     await message.answer(f"💸<b>Доступная валюта</b>💸")
 
@@ -53,7 +55,7 @@ async def get_balance(message: Message):
 @dp.message_handler(Text(contains="бумаги", ignore_case=True))
 async def get_share(message: Message):
 
-    sh_df = get_all_shares()
+    sh_df = get_all_shares(message.from_user.id)
 
     empty_portf = True
     await message.answer(f"💼Ценные бумаги в портфеле💼")
@@ -65,17 +67,17 @@ async def get_share(message: Message):
 
         if sh_df['instrument'][i] == "share":
             inst = "Акции"
-            name = sfb_name_by_figi(sh_df['figi'][i])
+            name = sfb_name_by_figi(sh_df['figi'][i], user_id=message.from_user.id)
             empty_portf = False
 
         elif sh_df['instrument'][i] == "bond":
             inst = "Бонды"
-            name = sfb_name_by_figi(sh_df['figi'][i])
+            name = sfb_name_by_figi(sh_df['figi'][i], user_id=message.from_user.id)
             empty_portf = False
 
         elif sh_df['instrument'][i] == "etf":
             inst = "ETF"
-            name = sfb_name_by_figi(sh_df['figi'][i])
+            name = sfb_name_by_figi(sh_df['figi'][i], user_id=message.from_user.id)
             empty_portf = False
 
         elif sh_df['instrument'][i] == "currency":
@@ -83,7 +85,7 @@ async def get_share(message: Message):
 
         elif sh_df['instrument'][i] == "future":
             inst = "Фьючерсы"
-            name = sfb_name_by_figi(sh_df['figi'][i])
+            name = sfb_name_by_figi(sh_df['figi'][i], user_id=message.from_user.id)
             empty_portf = False
 
         if sh_df['exp_yield'][i] >= 0:
@@ -118,7 +120,7 @@ async def get_share(message: Message):
 async def get_stat(message: Message):
     await message.answer(f"📈<b>Статистика по счёту</b>📉 ")
 
-    stat = get_all_stat()
+    stat = get_all_stat(message.from_user.id)
 
     # Посчитаем сумму всех бумаг
     sum = stat['sum_total'][0]
@@ -150,7 +152,7 @@ async def get_stat(message: Message):
 
 @dp.message_handler(Text(contains="ордер", ignore_case=True))
 async def get_orders(message: Message):
-    ord_df = get_my_order()
+    ord_df = get_my_order(message.from_user.id)
 
     await message.answer(f"📋Открытые ордера📋")
 
@@ -183,7 +185,7 @@ async def get_orders(message: Message):
             currency = ord_df['currency'][i]
 
         await message.answer(
-            f"✅<b>{dir}</b> бумаг {sfb_name_by_figi(ord_df['figi'][i])}\n"
+            f"✅<b>{dir}</b> бумаг {sfb_name_by_figi(ord_df['figi'][i], message.from_user.id)}\n"
             f"Открыт: {ord_df['order_date'][i]}\n\n"
             f"ID: {ord_df['order_id'][i]}\n\n"
             f"FIGI: {ord_df['figi'][i]}\n\n"
@@ -208,7 +210,7 @@ async def close_order(callback_query):
 
     order_id = callback_query.data[6:]
 
-    await cancel_order(order_id)
+    await cancel_order(order_id, user_id=callback_query.from_user.id)
 
     await bot.edit_message_text(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id, text="❌Ордер отменён❌")
 

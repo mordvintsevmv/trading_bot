@@ -1,5 +1,5 @@
 from tinkoff.invest import Quotation, Client
-from config import personal_data
+from config.personal_data import get_account, get_token, get_account_type
 import math
 from datetime import datetime, timedelta
 import pytz
@@ -44,8 +44,9 @@ def to_quotation(price):
 '''
 
 
-def share_lot_figi(figi):
-    with Client(personal_data.TOKEN) as client:
+def share_lot_figi(figi, user_id):
+    with Client(get_token(user_id)) as client:
+
         sh = client.instruments.shares()
         for i in sh.instruments:
             if i.figi == figi: in_lot = i.lot
@@ -58,9 +59,13 @@ def share_lot_figi(figi):
 '''
 
 
-def in_portf(figi):
-    with Client(personal_data.TOKEN) as client:
-        portf = client.operations.get_portfolio(account_id=personal_data.ACCOUNT_ID_BR)
+def in_portf(figi, user_id):
+    with Client(get_token(user_id)) as client:
+
+        if get_account_type(user_id=user_id) == "sandbox":
+            portf = client.sandbox.get_sandbox_portfolio(account_id=get_account(user_id))
+        else:
+            portf = client.operations.get_portfolio(account_id=get_account(user_id))
         for i in portf.positions:
             if i.figi == figi:
                 return True
@@ -72,8 +77,8 @@ def in_portf(figi):
 '''
 
 
-def in_shares(figi):
-    with Client(personal_data.TOKEN) as client:
+def in_shares(figi, user_id):
+    with Client(get_token(user_id)) as client:
         try:
             sh = client.instruments.get_instrument_by(id_type=1,id=figi)
         except:
@@ -88,10 +93,10 @@ def in_shares(figi):
 '''
 
 
-def is_trade(figi):
+def is_trade(figi, user_id):
 
     # Получаем расписание всех площадок за неделю
-    with Client(personal_data.TOKEN) as client:
+    with Client(get_token(user_id)) as client:
         sch = client.instruments.trading_schedules(
             from_=datetime.utcnow(),
             to=datetime.utcnow() + timedelta(days=6),

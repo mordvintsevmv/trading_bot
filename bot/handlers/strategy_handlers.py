@@ -3,7 +3,8 @@ from aiogram.types import Message
 from aiogram.dispatcher.filters import Text
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from trading.strategy.ema_adx_macd import stat_ema_adx_macd
-from trading.get_by_figi import sfb_name_by_figi
+from config.personal_data import get_account
+import sqlite3 as sl
 
 '''
     Выводит варианты алготрейдинга
@@ -17,7 +18,7 @@ week = 4
 async def algo_trade(message: Message):
     await message.answer(f"Выберите торговую стратегию:\n")
 
-    ema_adx_macd_keyboard = get_str1_keyboard()
+    ema_adx_macd_keyboard = get_str1_keyboard(message.from_user.id)
 
     await message.answer(f"EMA + ADX + MACD\n", reply_markup=ema_adx_macd_keyboard)
 
@@ -27,17 +28,21 @@ async def algo_trade(message: Message):
 '''
 
 
-@dp.callback_query_handler(lambda c: c.data and c.data.startswith("ema_adx_macd_stat_"))
+@dp.callback_query_handler(lambda c: c.data and c.data.startswith("str1:stat"))
 async def ema_adx_macd_stat(callback_query):
-    FIGI = callback_query.data[18:]
+    data = callback_query.data.split(":")
 
-    await bot.send_message(chat_id=callback_query.from_user.id, text=f"<b>{sfb_name_by_figi(FIGI)}</b>")
+    user_id = data[3]
+    figi = data[4]
+    name = data[5]
+
+    await bot.send_message(chat_id=callback_query.from_user.id, text=f"<b>{name}</b>")
     await bot.send_message(chat_id=callback_query.from_user.id, text=f"15-минутный грфик:")
-    stat_15 = stat_ema_adx_macd(figi=FIGI, period=days, hour_graph=False)
-    photo_15 = open(f"img/str1/graph/15_min_{FIGI}.png", "rb")
+    stat_15 = stat_ema_adx_macd(figi=figi, period=days, hour_graph=False, user_id=user_id)
+    photo_15 = open(f"img/str1/graph/15_min_{figi}.png", "rb")
     await bot.send_photo(chat_id=callback_query.from_user.id, photo=photo_15)
 
-    photo_15 = open(f"img/str1/ind/15_min_{FIGI}.png", "rb")
+    photo_15 = open(f"img/str1/ind/15_min_{figi}.png", "rb")
     await bot.send_photo(chat_id=callback_query.from_user.id, photo=photo_15)
 
     if stat_15[0]:
@@ -46,11 +51,11 @@ async def ema_adx_macd_stat(callback_query):
         await bot.send_message(chat_id=callback_query.from_user.id, text=f"📉Цена падает📉\n{stat_15[1]}")
 
     await bot.send_message(chat_id=callback_query.from_user.id, text=f"Часовой график:")
-    stat_hour = stat_ema_adx_macd(figi=FIGI, period=week, hour_graph=True)
-    photo_hour = open(f"img/str1/graph/hour_{FIGI}.png", "rb")
+    stat_hour = stat_ema_adx_macd(figi=figi, period=week, hour_graph=True, user_id=user_id)
+    photo_hour = open(f"img/str1/graph/hour_{figi}.png", "rb")
     await bot.send_photo(chat_id=callback_query.from_user.id, photo=photo_hour)
 
-    photo_hour = open(f"img/str1/ind/hour_{FIGI}.png", "rb")
+    photo_hour = open(f"img/str1/ind/hour_{figi}.png", "rb")
     await bot.send_photo(chat_id=callback_query.from_user.id, photo=photo_hour)
 
     if stat_hour[0]:
@@ -60,76 +65,79 @@ async def ema_adx_macd_stat(callback_query):
 
 
 '''
-    Старт Стратегии 1
+    Старт/Стоп Стратегии 1
 '''
 
 
-@dp.callback_query_handler(lambda c: c.data and c.data.startswith("ema_adx_macd_start_"))
-async def ema_adx_macd_start(callback_query):
-    FIGI = callback_query.data[19:]
+@dp.callback_query_handler(lambda c: c.data and c.data.startswith("str1:trade"))
+async def ema_adx_macd_str1_trade(callback_query):
+    data = callback_query.data.split(":")
 
-    with open('config/str1_status.txt', 'r') as f:
-        old_data = f.read()
+    status = data[2]
+    user_id = data[3]
+    figi = data[4]
+    account_id = get_account(user_id=user_id)
 
-    new_data = old_data.replace(f'figi:{FIGI};status:False;', f'figi:{FIGI};status:True;')
-
-    with open('config/str1_status.txt', 'w') as f:
-        f.write(new_data)
-
-    await bot.send_message(chat_id=callback_query.from_user.id, text=f"Стратегия для бумаг <b>{sfb_name_by_figi(FIGI)}</b> была запущена!")
-
-    ema_adx_macd_keyboard = get_str1_keyboard()
-    await bot.edit_message_text(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id, text=callback_query.message.text, reply_markup=ema_adx_macd_keyboard)
+    conn = sl.connect("db/str1.db")
+    cur = conn.cursor()
+    cur.execute("UPDATE CONFIG SET trade_status=? WHERE user_id = ? AND figi = ? AND account_id = ?", (status, user_id, figi, account_id))
+    conn.commit()
+    await bot.edit_message_text(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id, text=callback_query.message.text, reply_markup=get_str1_keyboard(user_id))
 
 
 
 '''
-    Стоп Стратегии 1
+    Старт/Стоп Стратегии 1 уведомления
 '''
 
 
-@dp.callback_query_handler(lambda c: c.data and c.data.startswith("ema_adx_macd_stop_"))
-async def ema_adx_macd_stop(callback_query):
-    FIGI = callback_query.data[18:]
+@dp.callback_query_handler(lambda c: c.data and c.data.startswith("str1:notif"))
+async def ema_adx_macd_str1_notif(callback_query):
+    data = callback_query.data.split(":")
 
-    with open('config/str1_status.txt', 'r') as f:
-        old_data = f.read()
+    status = data[2]
+    user_id = data[3]
+    figi = data[4]
+    account_id = get_account(user_id=user_id)
 
-    new_data = old_data.replace(f'figi:{FIGI};status:True;', f'figi:{FIGI};status:False;')
-
-    with open('config/str1_status.txt', 'w') as f:
-        f.write(new_data)
-
-    await bot.send_message(chat_id=callback_query.from_user.id, text=f"Стратегия для бумаг <b>{sfb_name_by_figi(FIGI)}</b> была остановлена!")
-
-    ema_adx_macd_keyboard = get_str1_keyboard()
-    await bot.edit_message_text(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id, text=callback_query.message.text, reply_markup=ema_adx_macd_keyboard)
+    conn = sl.connect("db/str1.db")
+    cur = conn.cursor()
+    cur.execute("UPDATE CONFIG SET notif_status=? WHERE user_id = ? AND figi = ? AND account_id = ?", (status, user_id, figi, account_id))
+    conn.commit()
+    await bot.edit_message_text(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id, text=callback_query.message.text, reply_markup=get_str1_keyboard(user_id))
 
 
 
-def get_str1_keyboard():
-    str1_status = open("config/str1_status.txt", "r")
+def get_str1_keyboard(user_id):
+
+    account_id = get_account(user_id)
+    conn = sl.connect("db/str1.db")
+    cur = conn.cursor()
+
+    shares = cur.execute('SELECT figi,name,trade_status,notif_status FROM CONFIG WHERE user_id = ? AND account_id = ? ',
+                         (user_id, account_id)).fetchall()
 
     str1_menu = []
 
-    for line in str1_status:
-        if line == '\n': continue
-        line = line.split(";")
-        if line[1][7:] == "True":
-            stat_str1_button = InlineKeyboardButton(text=f"Анализ {sfb_name_by_figi(line[0][5:])}",
-                                                    callback_data=f"ema_adx_macd_stat_{line[0][5:]}")
-            status_str1_button = InlineKeyboardButton(text=f"Остановить торговлю",
-                                                      callback_data=f"ema_adx_macd_stop_{line[0][5:]}")
+    for line in shares:
+        stat_str1_button = InlineKeyboardButton(text=f"Анализ {line[1]}",
+                                                callback_data=f"str1:stat:show:{user_id}:{line[0]}:{line[1]}")
+
+        if line[2] == "True":
+            status_str1_button = InlineKeyboardButton(text=f"⏹",
+                                                      callback_data=f"str1:trade:False:{user_id}:{line[0]}")
         else:
-            stat_str1_button = InlineKeyboardButton(text=f"Анализ {sfb_name_by_figi(line[0][5:])}",
-                                                    callback_data=f"ema_adx_macd_stat_{line[0][5:]}")
+            status_str1_button = InlineKeyboardButton(text=f"▶️",
+                                                      callback_data=f"str1:trade:True:{user_id}:{line[0]}")
 
-            status_str1_button = InlineKeyboardButton(text=f"Начать торговлю",
-                                                      callback_data=f"ema_adx_macd_start_{line[0][5:]}")
+        if line[3] == "True":
+            status_notif_button = InlineKeyboardButton(text=f"🔔",
+                                                       callback_data=f"str1:notif:False:{user_id}:{line[0]}")
+        else:
+            status_notif_button = InlineKeyboardButton(text=f"🔕", callback_data=f"str1:notif:True:{user_id}:{line[0]}")
 
-        str1_menu.append([stat_str1_button, status_str1_button])
+        str1_menu.append([stat_str1_button, status_str1_button, status_notif_button])
 
-    str1_status.close()
     ema_adx_macd_keyboard = InlineKeyboardMarkup(
         inline_keyboard=
         str1_menu,

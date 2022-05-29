@@ -1,8 +1,8 @@
 from tinkoff.invest import Client, Quotation, CandleInterval
-from config import personal_data
 from trading.trade_help import total_quantity
 from datetime import datetime, timedelta
 import pandas as pd
+from config.personal_data import get_token, get_account, get_account_type
 
 
 '''
@@ -22,10 +22,13 @@ import pandas as pd
 '''
 
 
-def get_all_currency():
-    with Client(personal_data.TOKEN) as client:
+def get_all_currency(user_id):
+    with Client(get_token(user_id)) as client:
 
-        pos = client.operations.get_positions(account_id=personal_data.ACCOUNT_ID_BR)
+        if get_account_type(user_id=user_id) == "sandbox":
+            pos = client.sandbox.get_sandbox_positions(account_id=get_account(user_id))
+        else:
+            pos = client.operations.get_positions(account_id=get_account(user_id))
 
         cur_df = pd.DataFrame(
             {
@@ -44,10 +47,13 @@ def get_all_currency():
 '''
 
 
-def get_all_shares():
-    with Client(personal_data.TOKEN) as client:
+def get_all_shares(user_id):
+    with Client(get_token(user_id)) as client:
 
-        portf = client.operations.get_portfolio(account_id=personal_data.ACCOUNT_ID_BR)
+        if get_account_type(user_id=user_id) == "sandbox":
+            portf = client.sandbox.get_sandbox_portfolio(account_id=get_account(user_id))
+        else:
+            portf = client.operations.get_portfolio(account_id=get_account(user_id))
 
         sh_df = pd.DataFrame(
             {
@@ -76,10 +82,13 @@ def get_all_shares():
 '''
 
 
-def get_all_stat():
-    with Client(personal_data.TOKEN) as client:
+def get_all_stat(user_id):
+    with Client(get_token(user_id)) as client:
 
-        portf = client.operations.get_portfolio(account_id=personal_data.ACCOUNT_ID_BR)
+        if get_account_type(user_id=user_id) == "sandbox":
+            portf = client.sandbox.get_sandbox_portfolio(account_id=get_account(user_id))
+        else:
+            portf = client.operations.get_portfolio(account_id=get_account(user_id))
 
         stat_df = pd.DataFrame(
             {
@@ -104,10 +113,13 @@ def get_all_stat():
 '''
 
 
-def get_lots(figi):
-    with Client(personal_data.TOKEN) as client:
+def get_lots(figi, user_id):
+    with Client(get_token(user_id)) as client:
 
-        portf = client.operations.get_portfolio(account_id=personal_data.ACCOUNT_ID_BR)
+        if get_account_type(user_id=user_id) == "sandbox":
+            portf = client.sandbox.get_sandbox_portfolio(account_id=get_account(user_id))
+        else:
+            portf = client.operations.get_portfolio(account_id=get_account(user_id))
 
         for i in portf.positions:
             if i.figi == figi:
@@ -122,10 +134,13 @@ def get_lots(figi):
 '''
 
 
-def get_price(figi):
-    with Client(personal_data.TOKEN) as client:
+def get_price(figi, user_id):
+    with Client(get_token(user_id)) as client:
 
-        portf = client.operations.get_portfolio(account_id=personal_data.ACCOUNT_ID_BR)
+        if get_account_type(user_id=user_id) == "sandbox":
+            portf = client.sandbox.get_sandbox_portfolio(account_id=get_account(user_id))
+        else:
+            portf = client.operations.get_portfolio(account_id=get_account(user_id))
 
         for i in portf.positions:
             if i.figi == figi:
@@ -141,10 +156,13 @@ def get_price(figi):
 '''
 
 
-def get_my_order():
-    with Client(personal_data.TOKEN) as client:
+def get_my_order(user_id):
+    with Client(get_token(user_id)) as client:
 
-        ord = client.orders.get_orders(account_id=personal_data.ACCOUNT_ID_BR).orders
+        if get_account_type(user_id=user_id) == "sandbox":
+            ord = client.sandbox.get_sandbox_orders(account_id=get_account(user_id)).orders
+        else:
+            ord = client.orders.get_orders(account_id=get_account(user_id)).orders
 
         ord_df = pd.DataFrame(
             {
@@ -177,9 +195,9 @@ def get_my_order():
 '''
 
 
-def get_price_figi(figi):
+def get_price_figi(figi, user_id):
 
-    with Client(personal_data.TOKEN) as client:
+    with Client(get_token(user_id)) as client:
 
         r = client.market_data.get_candles(
             figi=figi,

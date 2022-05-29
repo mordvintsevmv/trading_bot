@@ -1,6 +1,6 @@
 from tinkoff.invest import Client, CandleInterval
 from trading import trade_help
-from config import personal_data
+from config.personal_data import get_token, get_account
 from datetime import datetime, timedelta
 from pandas import DataFrame
 import pandas as pd
@@ -19,8 +19,8 @@ import matplotlib.pyplot as plt
 '''
 
 
-def get_candles_hour(figi, week=0):
-    with Client(personal_data.TOKEN) as client:
+def get_candles_hour(figi, user_id, week=0):
+    with Client(get_token(user_id)) as client:
         candles = client.market_data.get_candles(
             figi=figi,
             from_=datetime.utcnow() - timedelta(days=7 + 7 * week),
@@ -36,8 +36,8 @@ def get_candles_hour(figi, week=0):
 '''
 
 
-def get_candles_1_min(figi):
-    with Client(personal_data.TOKEN) as client:
+def get_candles_1_min(figi, user_id):
+    with Client(get_token(user_id)) as client:
         candles = client.market_data.get_candles(
             figi=figi,
             from_=datetime.utcnow() - timedelta(hours=24),
@@ -53,8 +53,8 @@ def get_candles_1_min(figi):
 '''
 
 
-def get_candles_5_min(figi):
-    with Client(personal_data.TOKEN) as client:
+def get_candles_5_min(figi, user_id):
+    with Client(get_token(user_id)) as client:
         candles = client.market_data.get_candles(
             figi=figi,
             from_=datetime.utcnow() - timedelta(hours=24),
@@ -73,8 +73,8 @@ def get_candles_5_min(figi):
 '''
 
 
-def get_candles_15_min(figi, days=0):
-    with Client(personal_data.TOKEN) as client:
+def get_candles_15_min(figi, user_id, days=0):
+    with Client(get_token(user_id)) as client:
         candles = client.market_data.get_candles(
             figi=figi,
             from_=datetime.utcnow() - timedelta(hours=24 + 24 * days),
@@ -90,8 +90,8 @@ def get_candles_15_min(figi, days=0):
 '''
 
 
-def get_candles_day(figi):
-    with Client(personal_data.TOKEN) as client:
+def get_candles_day(figi, user_id):
+    with Client(get_token(user_id)) as client:
         candles = client.market_data.get_candles(
             figi=figi,
             from_=datetime.utcnow() - timedelta(days=365),
@@ -132,11 +132,11 @@ def get_candles_df(candles):
 '''
 
 
-def create_hour_graph(figi, week=0, save=True):
+def create_hour_graph(figi, user_id, week=0, save=True):
     f_df = DataFrame()
 
     for i in range(week, -1, -1):
-        c = get_candles_hour(figi, i)
+        c = get_candles_hour(figi, user_id, i)
         df = get_candles_df(c)
         f_df = pd.concat([f_df, df], ignore_index=True)
 
@@ -146,11 +146,11 @@ def create_hour_graph(figi, week=0, save=True):
     return f_df
 
 
-def create_15_min_graph(figi, days=0, save=True):
+def create_15_min_graph(figi, user_id, days=0, save=True):
     f_df = DataFrame()
 
     for i in range(days, -1, -1):
-        c = get_candles_15_min(figi, i)
+        c = get_candles_15_min(figi, user_id, i)
         df = get_candles_df(c)
         f_df = pd.concat([f_df, df], ignore_index=True)
 
