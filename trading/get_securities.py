@@ -54,7 +54,23 @@ def security_incr_by_figi(figi, user_id):
 
 
 """
-    Позволяет получить список ценных бумаг по названию
+    Позволяет получить список ценных бумаг по названию или FIGI
+"""
+
+
+def security_by_figi(user_id, figi):
+
+    with Client(get_token(user_id)) as client:
+        try:
+            security = client.instruments.get_instrument_by(id_type=1, id=figi).instrument
+            return security
+        except Exception as ex:
+            print(ex)
+    return security
+
+
+"""
+    Позволяет получить список ценных бумаг по названию или FIGI
 """
 
 
