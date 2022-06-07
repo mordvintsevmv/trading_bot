@@ -2,6 +2,7 @@ from config.personal_data import get_token, get_account, get_account_type
 import math
 from tinkoff.invest import Client, Quotation, CandleInterval
 from datetime import datetime, timedelta
+from pycbrf.toolbox import ExchangeRates
 
 """
 
@@ -55,7 +56,7 @@ def in_lot_figi(figi, user_id):
 '''
 
 
-def is_in_portfolio(figi, user_id, account_id = "", account_type = ""):
+def is_in_portfolio(figi, user_id, account_id="", account_type=""):
     with Client(get_token(user_id)) as client:
 
         if account_id == "":
@@ -101,4 +102,55 @@ def get_price_figi(figi, user_id):
     return average_price
 
 
+'''
+    Функция для получения знака валюты
+'''
 
+
+def get_currency_sing(currency):
+    if currency == "try":
+        sign = "₺"
+    elif currency == "eur":
+        sign = "€"
+    elif currency == "kzt":
+        sign = "₸"
+    elif currency == "byn":
+        sign = "Br"
+    elif currency == "hkd":
+        sign = "HK$"
+    elif currency == "cny":
+        sign = "¥"
+    elif currency == "rub":
+        sign = "₽"
+    elif currency == "usd":
+        sign = "$"
+    elif currency == "jpy":
+        sign = "¥"
+    elif currency == "chf":
+        sign = "₣"
+    elif currency == "gbp":
+        sign = "£"
+    else:
+        sign = currency
+
+    return sign
+
+
+'''
+    Функция для получения курса валюты по отношению к рублю
+    Используется библиотека ЦБ РФ
+'''
+
+
+def get_exchange_rate(currency):
+    rates = ExchangeRates()
+    exchange = rates[f'{currency.upper()}']
+
+    if exchange is not None:
+        exchange_rate = exchange.rate
+    elif currency.upper() == "RUB":
+        exchange_rate = 1
+    else:
+        exchange_rate = 0
+
+    return float(exchange_rate)
