@@ -1,14 +1,22 @@
 import rsa
+import os.path
 
 
 def create_rsa_keys():
-    public_key, private_key = rsa.newkeys(1024)
 
-    with open("config/publicKey.pem", "wb") as pub:
-        pub.write(public_key.save_pkcs1('PEM'))
+    if not os.path.exists("config/publicKey.pem") or not os.path.exists("config/publicKey.pem"):
 
-    with open("config/privateKey.pem", "wb") as priv:
-        priv.write(private_key.save_pkcs1('PEM'))
+        public_key, private_key = rsa.newkeys(1024)
+
+        with open("config/publicKey.pem", "wb") as public:
+            public.write(public_key.save_pkcs1('PEM'))
+
+        with open("config/privateKey.pem", "wb") as private:
+            private.write(private_key.save_pkcs1('PEM'))
+
+
+
+
 
 
 def get_rsa_keys():
