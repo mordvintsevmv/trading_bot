@@ -89,13 +89,13 @@ def get_security_list(user_id, name, security_type="share"):
             if security_type == "share":
                 security = client.instruments.shares()
             elif security_type == "bond":
-                security = client.instruments.shares()
+                security = client.instruments.bonds()
             elif security_type == "etf":
-                security = client.instruments.shares()
+                security = client.instruments.etfs()
             elif security_type == "future":
-                security = client.instruments.shares()
+                security = client.instruments.futures()
             elif security_type == "currency":
-                security = client.instruments.shares()
+                security = client.instruments.currencies()
 
             for i in security.instruments:
                 if Levenshtein.distance(i.name.lower().replace(" ", ""), name.lower().replace(" ", "")) < len(

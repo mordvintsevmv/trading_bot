@@ -53,14 +53,14 @@ async def choose_token_finish(message: Message, state: FSMContext):
             cursor = connection.cursor()
 
             encrypted_token = encrypt(token)
-            encrypted_account = encrypt(acc.accounts[0].id)
+            account_id = acc.accounts[0].id
             if acc.accounts[0].name.upper() == "Песочница".upper():
                 account_type = "sandbox"
             else:
                 account_type = acc.accounts[0].name
 
             cursor.execute('UPDATE users SET token = ?, account_id = ?, account_type = ? WHERE user_id = ?;',
-                        (sl.Binary(encrypted_token), sl.Binary(encrypted_account), account_type,
+                        (sl.Binary(encrypted_token), account_id, account_type,
                          message.from_user.id))
             connection.commit()
 

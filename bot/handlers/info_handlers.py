@@ -24,11 +24,15 @@ from trading.trade_help import get_currency_sing
 async def get_balance(message: Message):
     currency_df = get_all_currency(message.from_user.id)
 
+    empty_wallet = True
+
     await message.answer(f"💸<b>Доступная валюта</b>💸")
 
     text = ""
 
     for i in currency_df.index:
+
+        empty_wallet = False
 
         if currency_df['exchange_rate'][i] != 0.0 and currency_df['exchange_rate'][i] != 1.0:
             text += (
@@ -39,7 +43,10 @@ async def get_balance(message: Message):
                 f"<b>{currency_df['name'][i]}</b>\n"
                 f"{round(currency_df['sum'][i], 2)}{currency_df['sign'][i]}\n\n")
 
-    await message.answer(text=text)
+    if empty_wallet:
+        await message.answer(text="У Вас нет средств!")
+    else:
+        await message.answer(text=text)
 
 
 """
@@ -152,7 +159,11 @@ async def get_orders(message: Message):
 
     await message.answer(f"📋Открытые ордера📋")
 
+    no_orders = True
+
     for i in order_df.index:
+
+        no_orders = False
 
         cancel_order_keyboard = InlineKeyboardMarkup()
         cancel_order_keyboard.add(InlineKeyboardButton(text=f"Отменить ордер", callback_data=f"cancel_order:{order_df['order_id'][i]}"))
@@ -179,6 +190,8 @@ async def get_orders(message: Message):
             f"Итого: {order_df['sum_total'][i]}{currency}\n",
             reply_markup=cancel_order_keyboard
         )
+    if no_orders:
+        await message.answer(text="У Вас нет открытых ордеров!")
 
 
 '''

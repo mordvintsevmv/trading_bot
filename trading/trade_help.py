@@ -88,7 +88,7 @@ def is_in_portfolio(figi, user_id, account_id="", account_type=""):
 
 def get_price_figi(figi, user_id):
     with Client(get_token(user_id)) as client:
-        r = client.market_data.get_candles(
+        candle = client.market_data.get_candles(
             figi=figi,
             from_=datetime.utcnow() - timedelta(days=7),
             to=datetime.utcnow(),
@@ -97,7 +97,7 @@ def get_price_figi(figi, user_id):
 
     # Выбираем последнюю доступную свечку
     # Получаем среднюю стоимость бумаги путём складывания самой высокой и самой низкой цен
-    average_price = ((quotation_to_float(r.candles[-1].high) + quotation_to_float(r.candles[-1].low)) / 2)
+    average_price = ((quotation_to_float(candle.candles[-1].high) + quotation_to_float(candle.candles[-1].low)) / 2)
 
     return average_price
 

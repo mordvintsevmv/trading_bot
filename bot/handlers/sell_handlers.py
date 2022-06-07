@@ -59,25 +59,8 @@ async def start_sell(message):
                 sell_keyboard = InlineKeyboardMarkup()
                 sell_keyboard.add(InlineKeyboardButton(text=f"Продать", callback_data=f"sell:figi:{i.figi}"))
 
-                inst = ""
-
-                if i.instrument_type == "share":
-                    inst = "Акции"
-
-                elif i.instrument_type == "bond":
-                    inst = "Бонды"
-
-                elif i.instrument_type == "etf":
-                    inst = "ETF"
-
-                elif i.instrument_type == "currency":
-                    inst = "Валюта"
-
-                elif i.instrument_type == "future":
-                    inst = "Фьючерсы"
-
                 await bot.send_message(chat_id=user_id, text=
-                f"🧾<b>{inst} {security_name_by_figi(figi=i.figi, user_id=user_id)}</b>\n"
+                f"🧾<b>{security_name_by_figi(figi=i.figi, user_id=user_id)}</b>\n"
                 f"FIGI: {i.figi}\n\n"
                 f"Бумаг в лоте: {in_lot_figi(figi=i.figi, user_id=user_id)}\n"
                 f"Средняя цена бумаги: {round(get_price_figi(user_id=message.from_user.id, figi=i.figi), 4)}{get_currency_sing(i.average_position_price.currency)}\n "

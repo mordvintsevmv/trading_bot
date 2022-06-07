@@ -63,26 +63,9 @@ async def search_security_buy(message: Message, state: FSMContext):
             choose_share_keyboard.add(
                 InlineKeyboardButton(text=f"Купить", callback_data=f"buy:figi:{security.figi}"))
 
-            inst = ""
-
-            if security.instrument_type == "share":
-                inst = "Акции"
-
-            elif security.instrument_type == "bond":
-                inst = "Бонды"
-
-            elif security.instrument_type == "etf":
-                inst = "ETF"
-
-            elif security.instrument_type == "currency":
-                inst = "Валюта"
-
-            elif security.instrument_type == "future":
-                inst = "Фьючерсы"
-
             await message.answer(
                 text=
-                f"🧾<b>{inst} {security.name}</b>\n"
+                f"🧾<b>{security.name}</b>\n"
                 f"FIGI: {security.figi}\n\n"
                 f"Бумаг в лоте: {security.lot}\n"
                 f"Средняя цена бумаги: {round(get_price_figi(user_id=message.from_user.id, figi=security.figi), 4)}{get_currency_sing(security.currency)}\n"

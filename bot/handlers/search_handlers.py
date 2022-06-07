@@ -44,23 +44,6 @@ async def search_finish(message: Message, state: FSMContext):
     if len(security_list) != 0:
         for security in security_list:
 
-            inst = ""
-
-            if security.instrument_type == "share":
-                inst = "Акции"
-
-            elif security.instrument_type == "bond":
-                inst = "Бонды"
-
-            elif security.instrument_type == "etf":
-                inst = "ETF"
-
-            elif security.instrument_type == "currency":
-                inst = "Валюта"
-
-            elif security.instrument_type == "future":
-                inst = "Фьючерсы"
-
             choose_share_keyboard = InlineKeyboardMarkup()
             choose_share_keyboard.add(
                 InlineKeyboardButton(text=f"Анализ",
@@ -70,7 +53,7 @@ async def search_finish(message: Message, state: FSMContext):
 
             await message.answer(
                 text=
-                f"🧾<b>{inst} {security.name}</b>\n"
+                f"🧾<b>{security.name}</b>\n"
                 f"FIGI: {security.figi}\n\n"
                 f"Бумаг в лоте: {security.lot}\n"
                 f"Средняя цена бумаги: {round(get_price_figi(user_id=message.from_user.id, figi=security.figi), 4)}{get_currency_sing(security.currency)}\n"

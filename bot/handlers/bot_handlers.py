@@ -16,7 +16,7 @@ from trading.strategy.str1 import start_str1
 
 
 async def start(dp):
-    await bot.send_message(chat_id=ADMIN_ID, text="Бот запущен", reply_markup=get_start_menu(ADMIN_ID))
+    #await bot.send_message(chat_id=ADMIN_ID, text="Бот запущен", reply_markup=get_start_menu(ADMIN_ID))
     await set_default_commands(dp)
     asyncio.create_task(schedule_ema_adx_macd())
 
