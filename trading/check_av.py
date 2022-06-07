@@ -1,12 +1,4 @@
-from tinkoff.invest import Client, OrderDirection, OrderType
-from trading import trade_help
-from config.personal_data import get_token, get_account, get_account_type
-from datetime import datetime
-from trading.trade_help import quotation_to_float
-import sqlite3 as sl
-from datetime import datetime
-from trading.get_securities import security_name_by_figi
-from trading.trade_help import in_lot_figi
+from config.personal_data import get_account, get_account_type
 from trading.get_account_info import get_all_currency
 from tinkoff.invest import Client
 from config.personal_data import get_token
