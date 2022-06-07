@@ -346,7 +346,7 @@ def get_my_operations(user_id, account_id="", figi=""):
         } for line in operations
     )
 
-    style_df = operations_df.drop(['id', 'user_id', 'order_id', 'figi'], axis=1)
+    style_df = operations_df.drop(['id', 'user_id', 'order_id', 'figi', 'ticker'], axis=1)
     #style_df = style_df.style.apply(color_macd)
 
     dfi.export(style_df, f"img/operations/all_operations_{user_id}.png")
