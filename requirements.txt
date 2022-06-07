@@ -9,3 +9,8 @@ dataframe_image
 bcrypt~=3.2.2
 tinkoff~=0.1.1
 pytz~=2022.1
+python-Levenshtein
+Crypto
+pycryptodome
+pycbrf~=1.1.0
+rsa~=4.8
