@@ -7,5 +7,8 @@ from bot.handlers import insert_token
 from bot.handlers import insert_accout
 from bot.handlers import create_sandbox
 from bot.handlers import insert_money_sandbox
-
-
+from bot.handlers.str1_handlers import str1_strategy_handlers
+from bot.handlers.str1_handlers import str1_settings_add
+from bot.handlers.str1_handlers import str1_settings_config
+from bot.handlers import command_handlers
+from bot.handlers import search_handlers
