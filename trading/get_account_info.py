@@ -1,6 +1,5 @@
-from tinkoff.invest import Client, Quotation, CandleInterval
+from tinkoff.invest import Client, Quotation
 from trading.trade_help import quotation_to_float
-from datetime import datetime, timedelta
 import pandas as pd
 from config.personal_data import get_token, get_account_type, get_account
 import sqlite3 as sl
