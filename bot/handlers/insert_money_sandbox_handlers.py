@@ -17,7 +17,6 @@ from config.personal_data import get_account_type
 
 @dp.message_handler(state="*", text="Пополнить счёт")
 async def add_money_sandbox_start(message: Message):
-
     if get_account_type(message.from_user.id) == "sandbox":
 
         choose_sum = InlineKeyboardMarkup(
@@ -70,11 +69,9 @@ async def add_money_sandbox_start(message: Message):
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith("sandbox:add"))
 async def add_money_sandbox_finish(callback_query):
-
     data = callback_query.data.split(":")
 
     sum = data[2]
     currency = data[3]
 
     add_money_sandbox(user_id=callback_query.from_user.id, sum=sum, currency=currency)
-
