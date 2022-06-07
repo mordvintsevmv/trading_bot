@@ -21,6 +21,11 @@ async def start(dp):
     asyncio.create_task(schedule_ema_adx_macd())
 
 
+'''
+    Устанавливаем команды меню
+'''
+
+
 async def set_default_commands(dp):
     await dp.bot.set_my_commands([
         types.BotCommand("start", "Запустить бота"),
@@ -28,6 +33,11 @@ async def set_default_commands(dp):
         types.BotCommand("cancel", "Отмена"),
         types.BotCommand("hello", "Приветствие"),
     ])
+
+
+'''
+    Запускаем автоматический анализ графиков
+'''
 
 
 async def schedule_ema_adx_macd():
