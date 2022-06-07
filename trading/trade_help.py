@@ -1,5 +1,5 @@
 from tinkoff.invest import Quotation, Client
-from config.personal_data import get_token
+from config.personal_data import get_token, get_account, get_account_type
 import math
 
 """
@@ -54,8 +54,15 @@ def in_lot_figi(figi, user_id):
 '''
 
 
-def is_in_portfolio(figi, user_id, account_id, account_type):
+def is_in_portfolio(figi, user_id, account_id = "", account_type = ""):
     with Client(get_token(user_id)) as client:
+
+        if account_id == "":
+            account_id = get_account(user_id=user_id)
+
+        if account_type == "":
+            account_id = get_account_type(user_id=user_id)
+
         if account_type == "sandbox":
             portfolio = client.sandbox.get_sandbox_portfolio(account_id=account_id)
         else:
@@ -63,6 +70,7 @@ def is_in_portfolio(figi, user_id, account_id, account_type):
         for i in portfolio.positions:
             if i.figi == figi:
                 return True
+
     return False
 
 
