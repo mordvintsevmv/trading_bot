@@ -18,7 +18,7 @@ from config.personal_data import get_token
 
 
 @dp.message_handler(state="*", text="Открыть песочницу")
-async def choose_account(message: Message):
+async def create_sandbox(message: Message):
     with Client(get_token(message.from_user.id)) as client:
         acc = client.sandbox.get_sandbox_accounts().accounts
         if len(acc) == 0:
@@ -36,7 +36,7 @@ async def choose_account(message: Message):
 
 
 @dp.message_handler(state="*", text="Закрыть песочницу")
-async def choose_account(message: Message):
+async def delete_sandbox_start(message: Message):
     with Client(get_token(message.from_user.id)) as client:
         acc = client.sandbox.get_sandbox_accounts().accounts
 
@@ -59,7 +59,7 @@ async def choose_account(message: Message):
 
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith('sandbox:close'))
-async def close_order(callback_query):
+async def close_sandbox_finish(callback_query):
     data = callback_query.data.split(":")
 
     account_id = data[2]
