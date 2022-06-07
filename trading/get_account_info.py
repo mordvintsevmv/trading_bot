@@ -29,7 +29,7 @@ def get_all_currency(user_id, account_id="", account_type=""):
             account_id = get_account(user_id=user_id)
 
         if account_type == "":
-            account_id = get_account_type(user_id=user_id)
+            account_type = get_account_type(user_id=user_id)
 
         if account_type == "sandbox":
             positions = client.sandbox.get_sandbox_positions(account_id=account_id)
@@ -136,7 +136,7 @@ def get_all_securities(user_id, account_id="", account_type=""):
             account_id = get_account(user_id=user_id)
 
         if account_type == "":
-            account_id = get_account_type(user_id=user_id)
+            account_type = get_account_type(user_id=user_id)
 
         if account_type == "sandbox":
             portfolio = client.sandbox.get_sandbox_portfolio(account_id=account_id)
@@ -174,7 +174,7 @@ def get_all_stat(user_id, account_id="", account_type=""):
             account_id = get_account(user_id=user_id)
 
         if account_type == "":
-            account_id = get_account_type(user_id=user_id)
+            account_type = get_account_type(user_id=user_id)
 
         if account_type == "sandbox":
             portfolio = client.sandbox.get_sandbox_portfolio(account_id=account_id)
@@ -213,7 +213,7 @@ def get_lots_portfolio(figi, user_id, account_id="", account_type=""):
             account_id = get_account(user_id=user_id)
 
         if account_type == "":
-            account_id = get_account_type(user_id=user_id)
+            account_type = get_account_type(user_id=user_id)
 
         if account_type == "sandbox":
             portfolio = client.sandbox.get_sandbox_portfolio(account_id=account_id)
@@ -240,7 +240,7 @@ def get_price_in_portfolio(figi, user_id, account_id="", account_type=""):
             account_id = get_account(user_id=user_id)
 
         if account_type == "":
-            account_id = get_account_type(user_id=user_id)
+            account_type = get_account_type(user_id=user_id)
 
         if account_type == "sandbox":
             portfolio = client.sandbox.get_sandbox_portfolio(account_id=account_id)
@@ -269,7 +269,7 @@ def get_my_order(user_id, account_id="", account_type=""):
             account_id = get_account(user_id=user_id)
 
         if account_type == "":
-            account_id = get_account_type(user_id=user_id)
+            account_type = get_account_type(user_id=user_id)
 
         if account_type == "sandbox":
             orders = client.sandbox.get_sandbox_orders(account_id=account_id).orders
@@ -305,6 +305,9 @@ def get_my_order(user_id, account_id="", account_type=""):
 def get_my_operations(user_id, account_id="", figi=""):
     connection = sl.connect("db/BotDB.db")
     cursor = connection.cursor()
+
+    if account_id == "":
+        account_id = get_account(user_id=user_id)
 
     if figi == "":
         operations = cursor.execute(
