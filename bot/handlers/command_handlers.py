@@ -19,13 +19,13 @@ async def start_command(message: Message):
     connection = sl.connect("db/BotDB.db")
     cursor = connection.cursor()
 
-    info = cursor.execute('SELECT * FROM USER WHERE user_id=?', (message.from_user.id,))
+    info = cursor.execute('SELECT * FROM users WHERE user_id=?', (message.from_user.id,))
     if info.fetchone() is None:
         user = (
             message.from_user.id, message.from_user.first_name, message.from_user.last_name, message.from_user.username,
             "none",
             "none", "none", "new")
-        cursor.execute("INSERT INTO USER (user_id, first_name, last_name, username, token, account_id, account_type, "
+        cursor.execute("INSERT INTO users (user_id, first_name, last_name, username, token, account_id, account_type, "
                        "access_level) VALUES(?, ?, ?, ?, ?, ?, ?, ?);", user)
         connection.commit()
 
