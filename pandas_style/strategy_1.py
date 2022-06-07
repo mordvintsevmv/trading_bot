@@ -1,5 +1,4 @@
 def color_macd(col):
-
     if col.name == "macd":
         return ['background-color: red'
                 if x < 0
@@ -17,12 +16,6 @@ def color_macd(col):
                 for i, x in col.iteritems()]
 
 
-
-
-
-
-
-
 def color_adx(val):
     if val < 20:
         color = 'red'
@@ -34,9 +27,6 @@ def color_adx(val):
         color = '#90EE90'
     elif val < 100:
         color = '#8B0000'
+    else:
+        color = 'white'
     return 'color: %s' % color
-"""
-return ['background-color: %s' % colour
-            if col.name == 'Total' or i == 4
-            else ''
-            for i, x in col.iteritems()]"""
