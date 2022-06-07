@@ -25,13 +25,15 @@ async def start_bot(message: Message):
             message.from_user.id, message.from_user.first_name, message.from_user.last_name, message.from_user.username,
             "none",
             "none", "none", "new")
-        cursor.execute("INSERT INTO USER (user_id, first_name, last_name, username, token, account_id, account_type, access_level) VALUES(?, ?, ?, ?, ?, ?, ?, ?);", user)
+        cursor.execute("INSERT INTO USER (user_id, first_name, last_name, username, token, account_id, account_type, "
+                       "access_level) VALUES(?, ?, ?, ?, ?, ?, ?, ?);", user)
         connection.commit()
 
     await message.answer("Добро пожаловать в торговый бот!", reply_markup=get_start_menu(message.from_user.id))
 
     get_token_keyboard = InlineKeyboardMarkup()
-    get_token_keyboard.add(InlineKeyboardButton(text="Выпустить токен", url="https://www.tinkoff.ru/invest/settings/api/"))
+    get_token_keyboard.add(InlineKeyboardButton(text="Выпустить токен", url="https://www.tinkoff.ru/invest/settings"
+                                                                            "/api/"))
 
     await message.answer("Чтобы торговать с помощью бота необходимо выпустить Токен Invest API.\n\n"
                          "Для его выпуска можно перейти по ссылке ниже или самостоятельно зайти на сайт Тинькофф -> "
