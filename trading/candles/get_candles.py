@@ -65,9 +65,6 @@ def get_candles_5_min(figi, user_id):
         return candles
 
 
-
-
-
 '''
     Функция для получения 15 минутных свечей за час
 '''
@@ -114,7 +111,7 @@ def get_candles_df(candles):
         {
             'time': i.time,
             'time_graph': i.time.strftime('%d.%m.%Y'),
-            'hour_graph': i.time.strftime('%H:%M'),# Будет использоваться для построения plot
+            'hour_graph': i.time.strftime('%H:%M'),  # Будет использоваться для построения plot
             'orders': i.volume,
             'open': trade_help.quotation_to_float(i.open),
             'close': trade_help.quotation_to_float(i.close),
