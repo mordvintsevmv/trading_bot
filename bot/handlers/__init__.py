@@ -3,10 +3,10 @@ from bot.handlers import info_handlers
 from bot.handlers import sell_handlers
 from bot.handlers import buy_handlers
 from bot.handlers import strategy_handlers
-from bot.handlers import insert_token
-from bot.handlers import insert_accout
-from bot.handlers import create_sandbox
-from bot.handlers import insert_money_sandbox
+from bot.handlers import insert_token_handlers
+from bot.handlers import insert_account_handlers
+from bot.handlers import sandbox_handlers
+from bot.handlers import insert_money_sandbox_handlers
 from bot.handlers.str1_handlers import str1_strategy_handlers
 from bot.handlers.str1_handlers import str1_settings_add
 from bot.handlers.str1_handlers import str1_settings_config
