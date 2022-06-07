@@ -1,6 +1,6 @@
 from tinkoff.invest import Client, CandleInterval
 from trading import trade_help
-from config.personal_data import get_token, get_account
+from config.personal_data import get_token
 from datetime import datetime, timedelta
 from pandas import DataFrame
 import pandas as pd
@@ -110,21 +110,21 @@ def get_candles_day(figi, user_id):
 
 
 def get_candles_df(candles):
-    df = DataFrame([
+    candle_df = DataFrame([
         {
             'time': i.time,
             'time_graph': i.time.strftime('%d.%m.%Y'),
             'hour_graph': i.time.strftime('%H:%M'),# Будет использоваться для построения plot
             'orders': i.volume,
-            'open': trade_help.total_quantity(i.open),
-            'close': trade_help.total_quantity(i.close),
-            'high': trade_help.total_quantity(i.high),
-            'low': trade_help.total_quantity(i.low),
+            'open': trade_help.quotation_to_float(i.open),
+            'close': trade_help.quotation_to_float(i.close),
+            'high': trade_help.quotation_to_float(i.high),
+            'low': trade_help.quotation_to_float(i.low),
         } for i in candles.candles
 
     ])
 
-    return df
+    return candle_df
 
 
 '''
@@ -133,40 +133,28 @@ def get_candles_df(candles):
 
 
 def create_hour_graph(figi, user_id, week=0, save=True):
-    f_df = DataFrame()
+    candle_df = DataFrame()
 
     for i in range(week, -1, -1):
         c = get_candles_hour(figi, user_id, i)
         df = get_candles_df(c)
-        f_df = pd.concat([f_df, df], ignore_index=True)
+        candle_df = pd.concat([candle_df, df], ignore_index=True)
 
     if save:
         plt.savefig(f"img/graph.png")
 
-    return f_df
+    return candle_df
 
 
 def create_15_min_graph(figi, user_id, days=0, save=True):
-    f_df = DataFrame()
+    candle_df = DataFrame()
 
     for i in range(days, -1, -1):
         c = get_candles_15_min(figi, user_id, i)
         df = get_candles_df(c)
-        f_df = pd.concat([f_df, df], ignore_index=True)
+        candle_df = pd.concat([candle_df, df], ignore_index=True)
 
     if save:
         plt.savefig(f"img/graph.png")
 
-    return f_df
-
-
-'''
-    Функция сохранения графика в файл
-
-    В дальнейшем данный график можно вывести в бота Телеграм в формате png
-'''
-
-
-#def save_graph(name=""):
-    #plt.rcParams.update({'axes.facecolor': '#293133'})
-    #plt.savefig(f"img/graph{name}.png")
+    return candle_df
