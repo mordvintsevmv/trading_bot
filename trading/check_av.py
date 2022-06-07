@@ -11,7 +11,7 @@ def check_money(user_id, price, quantity, currency, account_id="", account_type=
         account_id = get_account(user_id=user_id)
 
     if account_type == "":
-        account_id = get_account_type(user_id=user_id)
+        account_type = get_account_type(user_id=user_id)
 
     currency_df = get_all_currency(user_id=user_id, account_id=account_id, account_type=account_type)
 
