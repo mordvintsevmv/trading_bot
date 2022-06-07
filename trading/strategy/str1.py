@@ -4,11 +4,14 @@ from trading.candles.get_candles import create_hour_graph, create_15_min_graph
 import dataframe_image as dfi
 from pandas_style.strategy_1 import color_macd
 from math import isnan
-from trading.get_by_figi import sfb_incr_by_figi, sfb_name_by_figi
-from trading.place_order import sell_sfb, buy_sfb
+from trading.get_securities import security_incr_by_figi, security_name_by_figi
+from trading.place_order import sell_sfb, buy_order
 import pandas as pd
 import sqlite3 as sl
 from main import bot
+from trading.check_av import check_time, check_money
+from trading.trade_help import in_lot_figi
+from trading.trade_help import quotation_to_float
 
 '''
 
@@ -18,7 +21,7 @@ from main import bot
 '''
 
 
-def stat_ema_adx_macd(figi, user_id, period=4, hour_graph=True):
+def statistic_str1(figi, user_id, period=4, hour_graph=True):
     # Создаём график и добавляем индикаторы
 
     if hour_graph:
@@ -38,7 +41,7 @@ def stat_ema_adx_macd(figi, user_id, period=4, hour_graph=True):
     df.plot(ax=ax, x="time_graph", y="ema_21", color='red')
 
     price_growth = False
-    incr = sfb_incr_by_figi(figi, user_id)
+    incr = security_incr_by_figi(figi, user_id)
     trend_power = ''
 
     for i in df.index:
@@ -93,29 +96,37 @@ def stat_ema_adx_macd(figi, user_id, period=4, hour_graph=True):
 '''
 
 
-async def start_ema_adx_macd():
-
-    conn = sl.connect("db/str1.db")
+async def start_str1():
+    conn = sl.connect("db/BotDB.db")
     cur = conn.cursor()
 
-    shares = cur.execute('SELECT user_id, account_id, figi, buy_price, macd_border, adx_border, take_profit, stop_loss, notif_status FROM CONFIG WHERE trade_status = "True" ',).fetchall()
+    shares = cur.execute(
+        'SELECT user_id, account_id, account_type, figi, buy_price, currency, quantity_lots, macd_border, adx_border, take_profit, '
+        'stop_loss FROM str1_config WHERE trade_status = ? ',
+        ("True",)).fetchall()
 
     for line in shares:
-
         user_id = line[0]
         account_id = line[1]
-        figi = line[2]
-        buy_price = line[3]
-        macd_border = line[4]
-        adx_border = line[5]
-        take_profit = line[6]
-        stop_loss = line[7]
-        notif_status = line[8]
+        account_type = line[2]
+        figi = line[3]
+        buy_price = line[4]
+        currency = line[5]
+        quantity_lots = line[6]
+        macd_border = line[7]
+        adx_border = line[8]
+        take_profit = line[9]
+        stop_loss = line[10]
 
-        await sell_buy_ema_adx_macd(user_id = user_id, account_id = account_id, figi=figi, buy_price=buy_price,
-                                        macd_border=macd_border, adx_border=adx_border,
-                                        take_profit=take_profit, stop_loss=stop_loss, notif_status = notif_status)
-
+        if check_time(user_id=user_id, figi=figi)[0]:
+            if check_money(user_id=user_id, price=get_price_figi(figi=figi, user_id=user_id),
+                           quantity=quantity_lots * in_lot_figi(figi=figi, user_id=user_id), currency=currency,
+                           account_id=account_id, account_type=account_type):
+                await trade_str1(user_id=user_id, account_id=account_id, account_type=account_type, figi=figi,
+                                 buy_price=buy_price,
+                                 currency=currency, quantity_lots=quantity_lots, macd_border=macd_border,
+                                 adx_border=adx_border,
+                                 take_profit=take_profit, stop_loss=stop_loss)
 
 
 '''
@@ -125,11 +136,13 @@ async def start_ema_adx_macd():
 '''
 
 
-async def sell_buy_ema_adx_macd(user_id, account_id, figi, notif_status, buy_price=0.0, period=5, macd_border=0.0, adx_border=20.0, take_profit=0.02,
-                                stop_loss=0.03):
+async def trade_str1(user_id, account_id, account_type, figi, buy_price, currency, quantity_lots,
+                     macd_border,
+                     adx_border, take_profit,
+                     stop_loss, period=4):
     # Создаём график и добавляем индикаторы
 
-    df = create_hour_graph(user_id= user_id, figi=figi, week=period, save=False)
+    df = create_hour_graph(user_id=user_id, figi=figi, week=period, save=False)
 
     df = add_ema(df=df, window=7)
     df = add_ema(df=df, window=21)
@@ -138,8 +151,8 @@ async def sell_buy_ema_adx_macd(user_id, account_id, figi, notif_status, buy_pri
 
     macd_count = 0  # консолидируется ли macd
 
-    conn = sl.connect("db/str1.db")
-    cur = conn.cursor()
+    connection = sl.connect("db/BotDB.db")
+    cursor = connection.cursor()
 
     for i in df.index:
 
@@ -156,12 +169,13 @@ async def sell_buy_ema_adx_macd(user_id, account_id, figi, notif_status, buy_pri
                 if macd_count < 3:  # Если MACD не стоит на месте
                     if df["adx"].iloc[-1] > adx_border:
                         if df["ema_7"].iloc[-1] > df["ema_21"].iloc[-1]:
-                            r = buy_sfb(user_id=user_id, figi=figi, price=0, quantity_lots=1, via="str1_auto")
-                            await bot.send_message(chat_id=user_id, text=f"Покупка акций {sfb_name_by_figi(figi, user_id)} по цене {r}") if notif_status == "True" else 0
-                            cur.execute(
-                                "UPDATE CONFIG SET buy_price=? WHERE user_id = ? AND figi = ? AND account_id = ?",
-                                (r, user_id, figi, account_id))
-                            conn.commit()
+                            order = buy_order(user_id=user_id, figi=figi, price=0.0, quantity_lots=quantity_lots,
+                                              via="str1_auto", account_id=account_id, account_type=account_type)
+                            await bot.send_message(chat_id=user_id,
+                                                   text=f"Покупка акций {security_name_by_figi(figi, user_id)} по цене {quotation_to_float(order.executed_order_price)}")
+                            cursor.execute(
+                                "UPDATE str1_config SET buy_price=?, currency = ? WHERE user_id = ? AND figi = ? AND account_id = ?",
+                                (quotation_to_float(order.executed_order_price), currency, user_id, figi, account_id))
 
 
     else:  # Если была покупка
@@ -169,13 +183,16 @@ async def sell_buy_ema_adx_macd(user_id, account_id, figi, notif_status, buy_pri
                 df["macd"].iloc[-1] / df["macd"].iloc[-1] < 0.955) or (
                 buy_price / df["close"].iloc[-1] < 1 - stop_loss) or (
                 buy_price / df["close"].iloc[-1] > 1 + take_profit):
-            r = sell_sfb(figi=figi, price=0, quantity_lots=1, via="str1_auto")
+            order = sell_sfb(figi=figi, price=0, user_id=user_id, quantity_lots=quantity_lots, via="str1_auto",
+                             account_id=account_id, account_type=account_type)
             await bot.send_message(chat_id=user_id,
-                                   text=f"Продажа акций {sfb_name_by_figi(figi, user_id)} по цене {r}") if notif_status == "True" else 0
-            cur.execute(
-                "UPDATE CONFIG SET buy_price=0.0 WHERE user_id = ? AND figi = ? AND account_id = ?",
-                (user_id, figi, account_id))
-            conn.commit()
+                                   text=f"Продажа акций {security_name_by_figi(figi, user_id)} по цене {quotation_to_float(r.executed_order_price)}")
+            cursor.execute(
+                "UPDATE str1_config SET buy_price=0.0, currency = ? WHERE user_id = ? AND figi = ? AND account_id = ?",
+                (currency, user_id, figi, account_id))
+
+    connection.commit()
+
     return 0
 
 
@@ -188,7 +205,7 @@ async def sell_buy_ema_adx_macd(user_id, account_id, figi, notif_status, buy_pri
 
 
 def analyze_ema_adx_macd(figi, user_id, period=4, hour_graph=True, macd_border=0, adx_border=20, take_profit=0.02,
-                               stop_loss=0.03):
+                         stop_loss=0.03):
     # Создаём график и добавляем индикаторы
 
     if hour_graph:
@@ -211,7 +228,7 @@ def analyze_ema_adx_macd(figi, user_id, period=4, hour_graph=True, macd_border=0
     macd_count = 0  # консолидируется ли macd
     stop = False
     buy_price = 0.0
-    incr = sfb_incr_by_figi(user_id=user_id, figi=figi)
+    incr = security_incr_by_figi(user_id=user_id, figi=figi)
     total = 0.0
     stat_df = pd.DataFrame(columns=["date", "time", "sum", "operation"])
 
@@ -291,7 +308,7 @@ def analyze_ema_adx_macd(figi, user_id, period=4, hour_graph=True, macd_border=0
 
     plt.clf()
 
-    style_df = df[-11:-1].drop(['time', 'open', 'low', 'high', 'orders'], axis=1)
+    style_df = df[-11:].drop(['time', 'open', 'low', 'high', 'orders'], axis=1)
     style_df = style_df.style.apply(color_macd)
 
     if hour_graph:
@@ -299,6 +316,6 @@ def analyze_ema_adx_macd(figi, user_id, period=4, hour_graph=True, macd_border=0
         dfi.export(stat_df, f"img/str1/test/total/hour_{figi}.png")
     else:
         dfi.export(style_df, f"img/str1/test/ind/15_min_{figi}.png")
-        #dfi.export(stat_df, f"img/str1/test/total/15_min_{figi}.png")
+        # dfi.export(stat_df, f"img/str1/test/total/15_min_{figi}.png")
 
     return stat_df
