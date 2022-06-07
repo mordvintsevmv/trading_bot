@@ -4,8 +4,7 @@ import pandas as pd
 from config.personal_data import get_token, get_account_type, get_account
 import sqlite3 as sl
 import dataframe_image as dfi
-from pycbrf.toolbox import ExchangeRates
-
+from trading.trade_help import get_exchange_rate, get_currency_sing
 '''
 
     Тут представлены все функции, которые позволяют получить какую-либо информацию о счёте
@@ -51,60 +50,6 @@ def get_all_currency(user_id, account_id="", account_type=""):
         )
 
     return currency_df
-
-
-'''
-    Функция для получения знака валюты
-'''
-
-
-def get_currency_sing(currency):
-    if currency == "try":
-        sign = "₺"
-    elif currency == "eur":
-        sign = "€"
-    elif currency == "kzt":
-        sign = "₸"
-    elif currency == "byn":
-        sign = "Br"
-    elif currency == "hkd":
-        sign = "HK$"
-    elif currency == "cny":
-        sign = "¥"
-    elif currency == "rub":
-        sign = "₽"
-    elif currency == "usd":
-        sign = "$"
-    elif currency == "jpy":
-        sign = "¥"
-    elif currency == "chf":
-        sign = "₣"
-    elif currency == "gbp":
-        sign = "£"
-    else:
-        sign = currency
-
-    return sign
-
-
-'''
-    Функция для получения курса валюты по отношению к рублю
-    Используется библиотека ЦБ РФ
-'''
-
-
-def get_exchange_rate(currency):
-    rates = ExchangeRates()
-    exchange = rates[f'{currency.upper()}']
-
-    if exchange is not None:
-        exchange_rate = exchange.rate
-    elif currency.upper() == "RUB":
-        exchange_rate = 1
-    else:
-        exchange_rate = 0
-
-    return float(exchange_rate)
 
 
 '''
