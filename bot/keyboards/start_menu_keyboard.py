@@ -1,22 +1,16 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from config.personal_data import get_account_type
-
 """
     Клавиатура стартового меню
 """
+
+
 def get_start_menu(user_id):
-    if get_account_type(user_id) == "sandbox":
+    if get_account_type(user_id=user_id) == "sandbox":
         start_menu = ReplyKeyboardMarkup(
-            keyboard = [
-                [
-                    KeyboardButton(text="Приветствие"),
-                ],
+            keyboard=[
                 [
                     KeyboardButton(text="Пополнить счёт"),
-                ],
-                [
-                    KeyboardButton(text="Изменить Токен"),
-                    KeyboardButton(text="Изменить Аккаунт"),
                 ],
                 [
                     KeyboardButton(text="Баланс"),
@@ -24,18 +18,24 @@ def get_start_menu(user_id):
                 ],
                 [
                     KeyboardButton(text="Статистика"),
+                    KeyboardButton(text="Операции"),
+                    KeyboardButton(text="Поиск"),
+
                 ],
                 [
                     KeyboardButton(text="Открытые ордера"),
+                ],
+                [
+                    KeyboardButton(text="Торговые стратегии"),
                 ],
                 [
                     KeyboardButton(text="Продать"),
                     KeyboardButton(text="Купить"),
                 ],
                 [
-                    KeyboardButton(text="Торговые стратегии"),
+                    KeyboardButton(text="Изменить Токен"),
+                    KeyboardButton(text="Изменить Аккаунт"),
                 ],
-
             ],
             resize_keyboard=True
         )
@@ -43,16 +43,9 @@ def get_start_menu(user_id):
         start_menu = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="Приветствие"),
-                ],
-                [
                     KeyboardButton(text="Открыть песочницу"),
                     KeyboardButton(text="Закрыть песочницу"),
 
-                ],
-                [
-                    KeyboardButton(text="Изменить Токен"),
-                    KeyboardButton(text="Изменить Аккаунт"),
                 ],
                 [
                     KeyboardButton(text="Баланс"),
@@ -60,18 +53,23 @@ def get_start_menu(user_id):
                 ],
                 [
                     KeyboardButton(text="Статистика"),
+                    KeyboardButton(text="Операции"),
+                    KeyboardButton(text="Поиск"),
                 ],
                 [
                     KeyboardButton(text="Открытые ордера"),
+                ],
+                [
+                    KeyboardButton(text="Торговые стратегии"),
                 ],
                 [
                     KeyboardButton(text="Продать"),
                     KeyboardButton(text="Купить"),
                 ],
                 [
-                    KeyboardButton(text="Торговые стратегии"),
+                    KeyboardButton(text="Изменить Токен"),
+                    KeyboardButton(text="Изменить Аккаунт"),
                 ],
-
             ],
             resize_keyboard=True
         )
