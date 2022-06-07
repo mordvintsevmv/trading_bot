@@ -14,7 +14,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 @dp.message_handler(commands="start")
-async def start_bot(message: Message):
+async def start_command(message: Message):
 
     connection = sl.connect("db/BotDB.db")
     cursor = connection.cursor()
@@ -50,13 +50,13 @@ async def start_bot(message: Message):
 
 
 @dp.message_handler(state="*", commands="cancel")
-async def cmd_test1(message: types.Message, state: FSMContext):
+async def cancel_command(message: types.Message, state: FSMContext):
     await message.answer("Действие было отменено!", reply_markup=get_start_menu(message.from_user.id))
     await state.reset_state()
 
 
 @dp.message_handler(state="*", text="Отмена")
-async def cancel(message: types.Message, state: FSMContext):
+async def cancel_command_text(message: types.Message, state: FSMContext):
     await message.answer("Действие было отменено!", reply_markup=get_start_menu(message.from_user.id))
     await state.reset_state()
 
@@ -67,7 +67,7 @@ async def cancel(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(commands="hello")
-async def hello_message(message: Message):
+async def hello_command(message: Message):
     await message.answer(f"Привет, {message.from_user.first_name}! Это торговый бот. Пока я мало что умею, но я хороший!")
 
 
@@ -77,5 +77,5 @@ async def hello_message(message: Message):
 
 
 @dp.message_handler(commands="help")
-async def hello_message(message: Message):
+async def help_command(message: Message):
     await message.answer(f"Короче тут пока ничего нет)")
