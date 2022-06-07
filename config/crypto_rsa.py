@@ -3,9 +3,7 @@ import os.path
 
 
 def create_rsa_keys():
-
     if not os.path.exists("config/publicKey.pem") or not os.path.exists("config/publicKey.pem"):
-
         public_key, private_key = rsa.newkeys(1024)
 
         with open("config/publicKey.pem", "wb") as public:
@@ -13,10 +11,6 @@ def create_rsa_keys():
 
         with open("config/privateKey.pem", "wb") as private:
             private.write(private_key.save_pkcs1('PEM'))
-
-
-
-
 
 
 def get_rsa_keys():
