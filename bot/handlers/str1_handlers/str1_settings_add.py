@@ -49,26 +49,9 @@ async def str1_add_choose(message: Message, state: FSMContext):
             choose_share_keyboard = InlineKeyboardMarkup()
             choose_share_keyboard.add(InlineKeyboardButton(text=f"Добавить", callback_data=f"str1:settings:add:figi:{security.figi}"))
 
-            inst = ""
-
-            if security.instrument_type == "share":
-                inst = "Акции"
-
-            elif security.instrument_type == "bond":
-                inst = "Бонды"
-
-            elif security.instrument_type == "etf":
-                inst = "ETF"
-
-            elif security.instrument_type == "currency":
-                inst = "Валюта"
-
-            elif security.instrument_type == "future":
-                inst = "Фьючерсы"
-
             await message.answer(
                 text=
-                f"🧾<b>{inst} {security.name}</b>\n"
+                f"🧾<b>{security.name}</b>\n"
                 f"FIGI: {security.figi}\n\n"
                 f"Бумаг в лоте: {security.lot}\n"
                 f"Средняя цена бумаги: {round(get_price_figi(user_id=message.from_user.id, figi=security.figi), 4)}{get_currency_sing(security.currency)}\n"
@@ -91,7 +74,7 @@ async def str1_add_finish(callback_query):
     name = security_name_by_figi(figi, user_id=user_id)
     account_id = get_account(user_id=user_id)
     account_type = get_account_type(user_id=user_id)
-    currency = security_by_figi(figi, user_id).currency
+    currency = security_by_figi(figi=figi, user_id=user_id).currency
 
     new_str1_sfb = (user_id, account_id, account_type, figi, name, "False", "False", 0.0, currency, 1, 4, 0.0, 20.0, 0.02, 0.03)
 
