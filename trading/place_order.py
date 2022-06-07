@@ -2,11 +2,11 @@ from tinkoff.invest import Client, OrderDirection, OrderType
 from trading import trade_help
 from config.personal_data import get_token, get_account, get_account_type
 from datetime import datetime
-from trading.trade_help import total_quantity
+from trading.trade_help import quotation_to_float
 import sqlite3 as sl
 from datetime import datetime
-from trading.get_by_figi import sfb_name_by_figi
-from trading.trade_help import share_lot_figi
+from trading.get_securities import security_name_by_figi
+from trading.trade_help import in_lot_figi
 
 """
 
@@ -20,54 +20,58 @@ from trading.trade_help import share_lot_figi
 '''
 
 
-def buy_sfb(figi, price, quantity_lots, user_id, via="else"):
+def buy_order(figi, price, quantity_lots, user_id, account_id="", account_type="", via="else"):
     with Client(get_token(user_id)) as client:
 
-        if get_account_type(user_id) == "sandbox":
+        if account_id == "":
+            account_id = get_account(user_id=user_id)
+
+        if account_type == "":
+            account_type = get_account_type(user_id=user_id)
+
+        if account_type == "sandbox":
             if price > 0.0:
-                r = client.sandbox.post_sandbox_order(
+                order = client.sandbox.post_sandbox_order(
                     order_id=str(datetime.utcnow().timestamp()),
                     figi=figi,
                     price=trade_help.to_quotation(price),
                     quantity=quantity_lots,
-                    account_id=get_account(user_id),
+                    account_id=account_id,
                     direction=OrderDirection.ORDER_DIRECTION_BUY,
                     order_type=OrderType.ORDER_TYPE_LIMIT,
                 )
             else:
-                r = client.sandbox.post_sandbox_order(
+                order = client.sandbox.post_sandbox_order(
                     order_id=str(datetime.utcnow().timestamp()),
                     figi=figi,
                     quantity=quantity_lots,
-                    account_id=get_account(user_id),
+                    account_id=account_id,
                     direction=OrderDirection.ORDER_DIRECTION_BUY,
                     order_type=OrderType.ORDER_TYPE_MARKET,
                 )
         else:
             if price > 0.0:
-                r = client.orders.post_order(
+                order = client.orders.post_order(
                     order_id=str(datetime.utcnow().timestamp()),
                     figi=figi,
                     price=trade_help.to_quotation(price),
                     quantity=quantity_lots,
-                    account_id=get_account(user_id),
+                    account_id=account_id,
                     direction=OrderDirection.ORDER_DIRECTION_BUY,
                     order_type=OrderType.ORDER_TYPE_LIMIT,
                 )
             else:
-                r = client.orders.post_order(
+                order = client.orders.post_order(
                     order_id=str(datetime.utcnow().timestamp()),
                     figi=figi,
                     quantity=quantity_lots,
-                    account_id=get_account(user_id),
+                    account_id=account_id,
                     direction=OrderDirection.ORDER_DIRECTION_BUY,
                     order_type=OrderType.ORDER_TYPE_MARKET,
                 )
-    commission = total_quantity(r.initial_commission)
-    write_operation(figi=figi, price=price, commission=commission, quantity_lots=quantity_lots, user_id=user_id,
-                    order_id=r.order_id, operation="buy", via=via)
+    write_operation(order=order, user_id=user_id, via=via)
 
-    return total_quantity(r.executed_order_price)
+    return order
 
 
 '''
@@ -76,53 +80,59 @@ def buy_sfb(figi, price, quantity_lots, user_id, via="else"):
 '''
 
 
-def sell_sfb(figi, price, quantity_lots, user_id, via="else"):
+def sell_sfb(figi, price, quantity_lots, user_id, account_id="", account_type="", via="else"):
     with Client(get_token(user_id)) as client:
 
-        if get_account_type(user_id) == "sandbox":
+        if account_id == "":
+            account_id = get_account(user_id=user_id)
+
+        if account_type == "":
+            account_type = get_account_type(user_id=user_id)
+
+        if account_type == "sandbox":
             if price > 0.0:
-                r = client.sandbox.post_sandbox_order(
+                order = client.sandbox.post_sandbox_order(
                     order_id=str(datetime.utcnow().timestamp()),
                     figi=figi,
                     quantity=quantity_lots,
                     price=trade_help.to_quotation(price),
-                    account_id=get_account(user_id),
+                    account_id=account_id,
                     direction=OrderDirection.ORDER_DIRECTION_SELL,
                     order_type=OrderType.ORDER_TYPE_LIMIT,
                 )
             else:
-                r = client.sandbox.post_sandbox_order(
+                order = client.sandbox.post_sandbox_order(
                     order_id=str(datetime.utcnow().timestamp()),
                     figi=figi,
                     quantity=quantity_lots,
-                    account_id=get_account(user_id),
+                    account_id=account_id,
                     direction=OrderDirection.ORDER_DIRECTION_SELL,
                     order_type=OrderType.ORDER_TYPE_MARKET,
                 )
         else:
             if price > 0.0:
-                r = client.orders.post_order(
+                order = client.orders.post_order(
                     order_id=str(datetime.utcnow().timestamp()),
                     figi=figi,
                     quantity=quantity_lots,
                     price=trade_help.to_quotation(price),
-                    account_id=get_account(user_id),
+                    account_id=account_id,
                     direction=OrderDirection.ORDER_DIRECTION_SELL,
                     order_type=OrderType.ORDER_TYPE_LIMIT,
                 )
             else:
-                r = client.orders.post_order(
+                order = client.orders.post_order(
                     order_id=str(datetime.utcnow().timestamp()),
                     figi=figi,
                     quantity=quantity_lots,
-                    account_id=get_account(user_id),
+                    account_id=account_id,
                     direction=OrderDirection.ORDER_DIRECTION_SELL,
                     order_type=OrderType.ORDER_TYPE_MARKET,
                 )
-    commission = total_quantity(r.initial_commission)
-    write_operation(figi=figi, price=price, commission=commission, quantity_lots=quantity_lots, user_id=user_id,
-                    order_id=r.order_id, operation="sell", via=via)
-    return total_quantity(r.executed_order_price)
+
+    write_operation(order=order, user_id=user_id, via=via, account_id=account_id, account_type=account_type)
+
+    return order
 
 
 '''
@@ -130,73 +140,99 @@ def sell_sfb(figi, price, quantity_lots, user_id, via="else"):
 '''
 
 
-async def cancel_order(order_id, user_id, via="else"):
+async def cancel_order(order_id, user_id, account_id="", account_type=""):
     with Client(get_token(user_id)) as client:
 
-        if get_account_type(user_id) == "sandbox":
+        if account_id == "":
+            account_id = get_account(user_id=user_id)
+
+        if account_type == "":
+            account_type = get_account_type(user_id=user_id)
+
+        if account_type == "sandbox":
             state = client.sandbox.get_sandbox_order_state(
                 order_id=order_id,
-                account_id=get_account(user_id),
+                account_id=account_id,
             )
 
-            r = client.sandbox.cancel_sandbox_order(
+            order = client.sandbox.cancel_sandbox_order(
                 order_id=order_id,
-                account_id=get_account(user_id),
+                account_id=account_id,
             )
         else:
             state = client.orders.get_order_state(
                 order_id=order_id,
-                account_id=get_account(user_id),
+                account_id=account_id,
             )
 
-            r = client.orders.cancel_order(
+            order = client.orders.cancel_order(
                 order_id=order_id,
-                account_id=get_account(user_id),
+                account_id=account_id,
             )
 
-    conn = sl.connect("db/operations.db")
-    cur = conn.cursor()
+    connection = sl.connect("db/BotDB.db")
+    cursor = connection.cursor()
 
-    info = cur.execute('SELECT * FROM OPERATIONS WHERE order_id=?', (order_id,))
-    if info.fetchone() is not None:
+    direction = cursor.execute('SELECT direction FROM operations WHERE order_id=?', (order_id,)).fetchone()[0]
+    if direction is not None:
         quantity_lots = state.lots_executed
-        price = total_quantity(state.executed_order_price)
-        commission = total_quantity(state.executed_commission)
-        operation = cur.execute('SELECT operation FROM OPERATIONS WHERE order_id = ?;', (order_id,)).fetchone()[
-                        0] + "/canceled"
-        quantity_total = quantity_lots * share_lot_figi(state.figi, user_id=user_id)
+        price = quotation_to_float(state.executed_order_price)
+        commission = quotation_to_float(state.executed_commission)
+        direction += "/canceled"
+        quantity_total = quantity_lots * in_lot_figi(state.figi, user_id=user_id)
         price_total = quantity_total * price
 
-        new_operation = (quantity_lots, quantity_total, price_total, commission, operation, order_id)
+        new_operation = (quantity_lots, quantity_total, price_total, commission, direction, order_id)
 
-        cur.execute(
-            'UPDATE OPERATIONS SET quantity_lots = ?, quantity_total = ?, price_total = ?, commission = ?, operation '
+        cursor.execute(
+            'UPDATE OPERATIONS SET quantity_lots = ?, quantity_total = ?, price_total = ?, commission = ?, direction '
             '= ? WHERE order_id '
             '= ?;',
             new_operation)
-        conn.commit()
+        connection.commit()
 
-    return r
+    return order
 
 
-def write_operation(figi, price, commission, quantity_lots, user_id, order_id, operation, via="else"):
-    conn = sl.connect("db/operations.db")
-    cur = conn.cursor()
+def write_operation(order, user_id, account_id, account_type, via="else"):
+    connection = sl.connect("db/BotDB.db")
+    cursor = connection.cursor()
+
+    order_id = order.order_id
 
     date_op = datetime.now().strftime("%d.%m.%Y")
     time_op = datetime.now().strftime("%H:%M:%S")
-    name = sfb_name_by_figi(figi, user_id)
-    account_type = get_account_type(user_id)
-    account_id = get_account(user_id)
-    quantity_total = quantity_lots * share_lot_figi(figi=figi, user_id=user_id)
-    price_total = quantity_total * price
+
+    if order.direction == 2:
+        direction = "sell"
+    elif order.direction == 1:
+        direction = "buy"
+    else:
+        direction = "else"
+
+    figi = order.figi
+    ticker = order.figi  # Доделать потом
+    name = security_name_by_figi(figi=figi, user_id=user_id)
+
+    quantity_lots = order.lots_requested
+    in_lot = in_lot_figi(figi=figi, user_id=user_id)
+    quantity_total = quantity_lots * in_lot_figi(figi=figi, user_id=user_id)
+
+    price_position = quotation_to_float(order.initial_order_price)
+    commission = quotation_to_float(order.initial_commission)
+    price_total = price_position * quantity_total - commission
+
+    currency = order.initial_order_price.currency
+
+    message = order.message
 
     operation = (
-        user_id, account_id, account_type, order_id, date_op, time_op, operation, figi, name, quantity_lots,
-        quantity_total, price, price_total,
-        commission, via)
-    cur.execute("INSERT INTO OPERATIONS (user_id, account_id, account_type, order_id, date_op, time_op, operation, "
-                "figi, name, "
-                "quantity_lots, quantity_total, price, price_total, commission, via) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
-                operation)
-    conn.commit()
+        user_id, account_id, account_type, order_id, date_op, time_op, direction, figi, ticker, name, quantity_lots,
+        in_lot,
+        quantity_total, price_position, price_total,
+        commission, currency, message, via)
+    cursor.execute("INSERT INTO OPERATIONS (user_id, account_id, account_type, order_id, date_op, time_op, direction, "
+                   "figi, ticker, name, "
+                   "quantity_lots, in_lot, quantity_total, price_position, price_total, commission,currency, message, via) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?);",
+                   operation)
+    connection.commit()
