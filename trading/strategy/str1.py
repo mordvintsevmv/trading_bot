@@ -10,8 +10,7 @@ import pandas as pd
 import sqlite3 as sl
 from main import bot
 from trading.check_av import check_time, check_money
-from trading.trade_help import in_lot_figi
-from trading.trade_help import quotation_to_float
+from trading.trade_help import in_lot_figi, quotation_to_float, get_price_figi
 
 '''
 
@@ -101,7 +100,8 @@ async def start_str1():
     cur = conn.cursor()
 
     shares = cur.execute(
-        'SELECT user_id, account_id, account_type, figi, buy_price, currency, quantity_lots, macd_border, adx_border, take_profit, '
+        'SELECT user_id, account_id, account_type, figi, buy_price, currency, quantity_lots, macd_border, adx_border, '
+        'take_profit, '
         'stop_loss FROM str1_config WHERE trade_status = ? ',
         ("True",)).fetchall()
 
@@ -174,11 +174,12 @@ async def trade_str1(user_id, account_id, account_type, figi, buy_price, currenc
                             await bot.send_message(chat_id=user_id,
                                                    text=f"Покупка акций {security_name_by_figi(figi, user_id)} по цене {quotation_to_float(order.executed_order_price)}")
                             cursor.execute(
-                                "UPDATE str1_config SET buy_price=?, currency = ? WHERE user_id = ? AND figi = ? AND account_id = ?",
+                                "UPDATE str1_config SET buy_price=?, currency = ? WHERE user_id = ? AND figi = ? AND "
+                                "account_id = ?",
                                 (quotation_to_float(order.executed_order_price), currency, user_id, figi, account_id))
 
 
-    else:  # Если была покупка
+    else: # Если была покупка
         if df["ema_7"].iloc[-1] < df["ema_21"].iloc[-1] or macd_count >= 4 or (
                 df["macd"].iloc[-1] / df["macd"].iloc[-1] < 0.955) or (
                 buy_price / df["close"].iloc[-1] < 1 - stop_loss) or (
@@ -186,7 +187,7 @@ async def trade_str1(user_id, account_id, account_type, figi, buy_price, currenc
             order = sell_sfb(figi=figi, price=0, user_id=user_id, quantity_lots=quantity_lots, via="str1_auto",
                              account_id=account_id, account_type=account_type)
             await bot.send_message(chat_id=user_id,
-                                   text=f"Продажа акций {security_name_by_figi(figi, user_id)} по цене {quotation_to_float(r.executed_order_price)}")
+                                   text=f"Продажа акций {security_name_by_figi(figi, user_id)} по цене {quotation_to_float(order.executed_order_price)}")
             cursor.execute(
                 "UPDATE str1_config SET buy_price=0.0, currency = ? WHERE user_id = ? AND figi = ? AND account_id = ?",
                 (currency, user_id, figi, account_id))
