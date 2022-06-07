@@ -5,6 +5,7 @@ from config.personal_data import get_token, get_account_type, get_account
 import sqlite3 as sl
 import dataframe_image as dfi
 from trading.trade_help import get_exchange_rate, get_currency_sing
+
 '''
 
     Тут представлены все функции, которые позволяют получить какую-либо информацию о счёте
@@ -292,7 +293,7 @@ def get_my_operations(user_id, account_id="", figi=""):
     )
 
     style_df = operations_df.drop(['id', 'user_id', 'order_id', 'figi', 'ticker'], axis=1)
-    #style_df = style_df.style.apply(color_macd)
+    # style_df = style_df.style.apply(color_macd)
 
     dfi.export(style_df, f"img/operations/all_operations_{user_id}.png")
 
