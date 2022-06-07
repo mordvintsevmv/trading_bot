@@ -62,7 +62,7 @@ def is_in_portfolio(figi, user_id, account_id = "", account_type = ""):
             account_id = get_account(user_id=user_id)
 
         if account_type == "":
-            account_id = get_account_type(user_id=user_id)
+            account_type = get_account_type(user_id=user_id)
 
         if account_type == "sandbox":
             portfolio = client.sandbox.get_sandbox_portfolio(account_id=account_id)
