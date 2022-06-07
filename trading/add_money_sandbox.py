@@ -4,7 +4,7 @@ from config.personal_data import get_token, get_account
 from tinkoff.invest import MoneyValue
 
 
-def add_money_sandbox(user_id, sum, cur, account_id=""):
+def add_money_sandbox(user_id, sum, currency, account_id=""):
     with Client(get_token(user_id)) as client:
 
         if account_id == "":
@@ -15,7 +15,7 @@ def add_money_sandbox(user_id, sum, cur, account_id=""):
 
         pay_in = client.sandbox.sandbox_pay_in(
             account_id=account_id,
-            amount=MoneyValue(units=units, nano=nano, currency=f"{cur}")
+            amount=MoneyValue(units=units, nano=nano, currency=f"{currency}")
         )
 
     return pay_in
