@@ -1,7 +1,6 @@
 from tinkoff.invest import Client, OrderDirection, OrderType
 from trading import trade_help
 from config.personal_data import get_token, get_account, get_account_type
-from datetime import datetime
 from trading.trade_help import quotation_to_float
 import sqlite3 as sl
 from datetime import datetime
@@ -69,7 +68,7 @@ def buy_order(figi, price, quantity_lots, user_id, account_id="", account_type="
                     direction=OrderDirection.ORDER_DIRECTION_BUY,
                     order_type=OrderType.ORDER_TYPE_MARKET,
                 )
-    write_operation(order=order, user_id=user_id, via=via)
+    write_operation(order=order, user_id=user_id, via=via, account_id=account_id, account_type=account_type)
 
     return order
 
