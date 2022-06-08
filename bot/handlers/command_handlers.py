@@ -24,9 +24,9 @@ async def start_command(message: Message):
         user = (
             message.from_user.id, message.from_user.first_name, message.from_user.last_name, message.from_user.username,
             "none",
-            "none", "none", "new")
+            "none", "none", "none", "new")
         cursor.execute("INSERT INTO users (user_id, first_name, last_name, username, token, account_id, account_type, "
-                       "access_level) VALUES(?, ?, ?, ?, ?, ?, ?, ?);", user)
+                       "account_access, bot_access_level) VALUES(?, ?, ?, ?, ?, ?, ?, ?,?);", user)
         connection.commit()
 
     await message.answer("Добро пожаловать в торговый бот!", reply_markup=get_start_menu(message.from_user.id))

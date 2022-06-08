@@ -1,20 +1,17 @@
 from main import bot
-from config.personal_data import get_account
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from trading.get_account_info import get_currency_sing
 from main import dp
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardMarkup
 from bot.keyboards.start_menu_keyboard import get_start_menu
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import ReplyKeyboardMarkup
 from aiogram import types
-from trading.trade_help import in_lot_figi
-from trading.trade_help import get_price_figi
+from trading.trade_help import in_lot_figi, get_price_figi
 from trading.place_order import buy_order
-from trading.check_av import check_time
-from config.personal_data import get_account_type
-from trading.get_securities import get_security_list
+from trading.check_av import check_time, check_money
+from config.personal_data import get_account_type, get_account_access, get_account
+from trading.get_securities import get_security_list, security_by_figi
 
 """
 
@@ -27,8 +24,8 @@ from trading.get_securities import get_security_list
 """
 
 
-class SearchSFB(StatesGroup):
-    wait_sfb = State()
+class SearchSFB_buy(StatesGroup):
+    wait_sfb_buy = State()
 
 
 class BuyOrder(StatesGroup):
@@ -44,8 +41,11 @@ class BuyOrder(StatesGroup):
 
 @dp.message_handler(text="Купить")
 async def start_buy(message):
-    await bot.send_message(chat_id=message.from_user.id, text="Введите название бумаги или FIGI:")
-    await SearchSFB.wait_sfb.set()
+    if get_account_access(message.from_user.id) == 1:
+        await bot.send_message(chat_id=message.from_user.id, text="Введите название бумаги или FIGI:")
+        await SearchSFB_buy.wait_sfb_buy.set()
+    else:
+        await bot.send_message(chat_id=message.from_user.id, text=f"<b>У Вас используется токен только для чтения!</b>")
 
 
 """
@@ -53,7 +53,7 @@ async def start_buy(message):
 """
 
 
-@dp.message_handler(state=SearchSFB.wait_sfb)
+@dp.message_handler(state=SearchSFB_buy.wait_sfb_buy)
 async def search_security_buy(message: Message, state: FSMContext):
     security_list = get_security_list(user_id=message.from_user.id, name=message.text)
     if len(security_list) != 0:
@@ -63,9 +63,28 @@ async def search_security_buy(message: Message, state: FSMContext):
             choose_share_keyboard.add(
                 InlineKeyboardButton(text=f"Купить", callback_data=f"buy:figi:{security.figi}"))
 
+            try:
+                inst_type = security.instrument_type
+
+                if inst_type == "share":
+                    inst = "Акции"
+                elif inst_type == "future":
+                    inst = "Фьючерсы"
+                elif inst_type == "bond":
+                    inst = "Бонды"
+                elif inst_type == "etf":
+                    inst = "ETF"
+                elif inst_type == "currency":
+                    inst = "Валюта"
+                else:
+                    inst = inst_type
+
+            except:
+                inst = "Акции"
+
             await message.answer(
                 text=
-                f"🧾<b>{security.name}</b>\n"
+                f"🧾<b>{inst} {security.name}</b>\n"
                 f"FIGI: {security.figi}\n\n"
                 f"Бумаг в лоте: {security.lot}\n"
                 f"Средняя цена бумаги: {round(get_price_figi(user_id=message.from_user.id, figi=security.figi), 4)}{get_currency_sing(security.currency)}\n"
@@ -86,7 +105,6 @@ async def search_security_buy(message: Message, state: FSMContext):
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith("buy:figi"))
 async def b_choose_quantity(callback_query, state: FSMContext):
-
     data = callback_query.data.split(":")
     figi = data[2]
 
@@ -175,21 +193,35 @@ async def b_finish(message: types.Message, state: FSMContext):
 
     # Проверяем, что цена находится в разумных границах
     if message.text == "Лучшая цена":
+
         await state.finish()
+
         # Продадим бумаги и выведем сообщение
-        await message.answer(
-            f"Купить акции {user_data['b_chosen_figi']} в количестве {user_data['b_chosen_quantity']} по лучшей цене.\n",
-            reply_markup=get_start_menu(message.from_user.id))
-        buy_order(figi=user_data['b_chosen_figi'], price=0.0,
-                  quantity_lots=int(user_data['b_chosen_quantity']), user_id=message.from_user.id)
+
+        order = buy_order(figi=user_data['b_chosen_figi'], price=0.0,
+                          quantity_lots=int(user_data['b_chosen_quantity']), user_id=message.from_user.id)
+
+        if order:
+            await message.answer(
+                f"Купить акции {user_data['b_chosen_figi']} в количестве {user_data['b_chosen_quantity']} по лучшей цене.\n",
+                reply_markup=get_start_menu(message.from_user.id))
+        else:
+            await message.answer("Ошибка! Вероятно, у Вас мало средств на счёте!")
+
+
     elif price * 1.20 > float(message.text) > price * 0.80:
         await state.finish()
-        # Продадим бумаги и выведем сообщение
-        await message.answer(
-            f"Купить акции {user_data['b_chosen_figi']} в количестве {user_data['b_chosen_quantity']} по цене {message.text}.\n",
-            reply_markup=get_start_menu(message.from_user.id))
-        buy_order(figi=user_data['b_chosen_figi'], price=float(message.text),
-                  quantity_lots=int(user_data['b_chosen_quantity']), user_id=message.from_user.id, via="bot", account_id=get_account(user_id=user_data))
+
+        order = buy_order(figi=user_data['b_chosen_figi'], price=float(message.text),
+                          quantity_lots=int(user_data['b_chosen_quantity']), user_id=message.from_user.id, via="bot",
+                          account_id=get_account(user_id=user_data))
+        if order:
+            await message.answer(
+                f"Купить акции {user_data['b_chosen_figi']} в количестве {user_data['b_chosen_quantity']} по цене {message.text}.\n",
+                reply_markup=get_start_menu(message.from_user.id))
+        else:
+            await message.answer("Ошибка! Вероятно, у Вас мало средств на счёте!")
+
     # В случае ошибки повторим запрос
     else:
         await message.answer("Введите корректную цену!")

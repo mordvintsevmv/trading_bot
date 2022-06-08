@@ -15,7 +15,7 @@ from aiogram import types
 from trading.trade_help import in_lot_figi
 from trading.get_securities import security_name_by_figi
 from trading.check_av import check_time
-from config.personal_data import get_account_type
+from config.personal_data import get_account_type, get_account_access
 
 """
 
@@ -41,34 +41,49 @@ class SellOrder(StatesGroup):
 
 @dp.message_handler(text="Продать")
 async def start_sell(message):
-    empty_portfolio = True
+    if get_account_access(message.from_user.id) == 1:
 
-    user_id = message.from_user.id
+        empty_portfolio = True
 
-    with Client(get_token(message.from_user.id)) as client:
+        user_id = message.from_user.id
 
-        if get_account_type(message.from_user.id) == "sandbox":
-            portfolio = client.sandbox.get_sandbox_portfolio(account_id=get_account(message.from_user.id))
-        else:
-            portfolio = client.operations.get_portfolio(account_id=get_account(message.from_user.id))
+        with Client(get_token(message.from_user.id)) as client:
 
-        for i in portfolio.positions:
-            if i.instrument_type != "currency":
-                empty_portfolio = False
+            if get_account_type(message.from_user.id) == "sandbox":
+                portfolio = client.sandbox.get_sandbox_portfolio(account_id=get_account(message.from_user.id))
+            else:
+                portfolio = client.operations.get_portfolio(account_id=get_account(message.from_user.id))
 
-                sell_keyboard = InlineKeyboardMarkup()
-                sell_keyboard.add(InlineKeyboardButton(text=f"Продать", callback_data=f"sell:figi:{i.figi}"))
+            for i in portfolio.positions:
+                if i.instrument_type != "currency":
+                    empty_portfolio = False
 
-                await bot.send_message(chat_id=user_id, text=
-                f"🧾<b>{security_name_by_figi(figi=i.figi, user_id=user_id)}</b>\n"
-                f"FIGI: {i.figi}\n\n"
-                f"Бумаг в лоте: {in_lot_figi(figi=i.figi, user_id=user_id)}\n"
-                f"Средняя цена бумаги: {round(get_price_figi(user_id=message.from_user.id, figi=i.figi), 4)}{get_currency_sing(i.average_position_price.currency)}\n "
-                f"Итого стоимость: {round(in_lot_figi(figi=i.figi, user_id=user_id) * get_price_figi(user_id=message.from_user.id, figi=i.figi), 4)}{get_currency_sing(i.average_position_price.currency)}\n",
-                                       reply_markup=sell_keyboard)
+                    sell_keyboard = InlineKeyboardMarkup()
+                    sell_keyboard.add(InlineKeyboardButton(text=f"Продать", callback_data=f"sell:figi:{i.figi}"))
 
-    if empty_portfolio:
-        await bot.send_message(chat_id=user_id, text=f"<b>У Вас нет бумаг!</b>")
+                    if i.instrument_type == "share":
+                        inst = "Акции"
+                    elif i.instrument_type == "bond":
+                        inst = "Бонды"
+                    elif i.instrument_type == "future":
+                        inst = "Фьючерсы"
+                    elif i.instrument_type == "etf":
+                        inst = "ETF"
+                    else:
+                        inst = i.instrument_type
+
+                    await bot.send_message(chat_id=user_id, text=
+                    f"🧾<b>{inst} {security_name_by_figi(figi=i.figi, user_id=user_id)}</b>\n"
+                    f"FIGI: {i.figi}\n\n"
+                    f"Бумаг в лоте: {in_lot_figi(figi=i.figi, user_id=user_id)}\n"
+                    f"Средняя цена бумаги: {round(get_price_figi(user_id=message.from_user.id, figi=i.figi), 4)}{get_currency_sing(i.average_position_price.currency)}\n "
+                    f"Итого стоимость: {round(in_lot_figi(figi=i.figi, user_id=user_id) * get_price_figi(user_id=message.from_user.id, figi=i.figi), 4)}{get_currency_sing(i.average_position_price.currency)}\n",
+                                           reply_markup=sell_keyboard)
+
+        if empty_portfolio:
+            await bot.send_message(chat_id=user_id, text=f"<b>У Вас нет бумаг!</b>")
+    else:
+        await bot.send_message(chat_id=message.from_user.id, text=f"<b>У Вас используется токен только для чтения!</b>")
 
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith("sell:figi"))
@@ -172,23 +187,36 @@ async def s_finish(message: types.Message, state: FSMContext):
     # Проверяем, что цена находится в разумных пределах
     if message.text == "Лучшая цена":
         # Продаём бумаги и выводим сообщение об этом
-        await message.answer(
-            f"Продать акции {user_data['s_chosen_figi']} в количестве {user_data['s_chosen_quantity']} по лучшей цене.\n",
-            reply_markup=get_start_menu(message.from_user.id))
-        sell_sfb(figi=user_data['s_chosen_figi'], price=0.0,
-                 quantity_lots=int(user_data['s_chosen_quantity']), user_id=message.from_user.id)
+
         await state.finish()
+
+        order = sell_sfb(figi=user_data['s_chosen_figi'], price=0.0,
+                         quantity_lots=int(user_data['s_chosen_quantity']), user_id=message.from_user.id)
+
+        if order:
+            await message.answer(
+                f"Продать акции {user_data['s_chosen_figi']} в количестве {user_data['s_chosen_quantity']} по лучшей цене.\n",
+                reply_markup=get_start_menu(message.from_user.id))
+        else:
+            await message.answer("Ошибка!")
+
 
     elif (price * 1.20) > float(message.text) > (price * 0.80):
         # Продаём бумаги и выводим сообщение об этом
-        await message.answer(
-            f"Продать акции {user_data['s_chosen_figi']} в количестве {user_data['s_chosen_quantity']} по цене {message.text}.\n"
-            f"Суммарно на {round(float(user_data['s_chosen_quantity']) * in_lot_figi(user_data['s_chosen_figi'], user_id=message.from_user.id) * float(message.text), 3)}",
-            reply_markup=get_start_menu(message.from_user.id))
-        sell_sfb(figi=user_data['s_chosen_figi'], price=float(message.text),
-                 quantity_lots=int(user_data['s_chosen_quantity']), user_id=message.from_user.id, via="bot",
-                 account_id=get_account(user_id=user_data))
+
         await state.finish()
+
+        order = sell_sfb(figi=user_data['s_chosen_figi'], price=float(message.text),
+                         quantity_lots=int(user_data['s_chosen_quantity']), user_id=message.from_user.id, via="bot",
+                         account_id=get_account(user_id=user_data))
+
+        if order:
+            await message.answer(
+                f"Продать акции {user_data['s_chosen_figi']} в количестве {user_data['s_chosen_quantity']} по цене {message.text}.\n"
+                f"Суммарно на {round(float(user_data['s_chosen_quantity']) * in_lot_figi(user_data['s_chosen_figi'], user_id=message.from_user.id) * float(message.text), 3)}",
+                reply_markup=get_start_menu(message.from_user.id))
+        else:
+            await message.answer("Ошибка!")
 
 
     # В случае ошибки повторяем запрос

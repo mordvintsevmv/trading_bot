@@ -90,44 +90,56 @@ def sell_sfb(figi, price, quantity_lots, user_id, account_id="", account_type=""
 
         if account_type == "sandbox":
             if price > 0.0:
-                order = client.sandbox.post_sandbox_order(
-                    order_id=str(datetime.utcnow().timestamp()),
-                    figi=figi,
-                    quantity=quantity_lots,
-                    price=trade_help.to_quotation(price),
-                    account_id=account_id,
-                    direction=OrderDirection.ORDER_DIRECTION_SELL,
-                    order_type=OrderType.ORDER_TYPE_LIMIT,
-                )
+                try:
+                    order = client.sandbox.post_sandbox_order(
+                        order_id=str(datetime.utcnow().timestamp()),
+                        figi=figi,
+                        quantity=quantity_lots,
+                        price=trade_help.to_quotation(price),
+                        account_id=account_id,
+                        direction=OrderDirection.ORDER_DIRECTION_SELL,
+                        order_type=OrderType.ORDER_TYPE_LIMIT,
+                    )
+                except:
+                    return False
             else:
-                order = client.sandbox.post_sandbox_order(
-                    order_id=str(datetime.utcnow().timestamp()),
-                    figi=figi,
-                    quantity=quantity_lots,
-                    account_id=account_id,
-                    direction=OrderDirection.ORDER_DIRECTION_SELL,
-                    order_type=OrderType.ORDER_TYPE_MARKET,
-                )
+                try:
+                    order = client.sandbox.post_sandbox_order(
+                        order_id=str(datetime.utcnow().timestamp()),
+                        figi=figi,
+                        quantity=quantity_lots,
+                        account_id=account_id,
+                        direction=OrderDirection.ORDER_DIRECTION_SELL,
+                        order_type=OrderType.ORDER_TYPE_MARKET,
+                    )
+                except:
+                    return False
         else:
             if price > 0.0:
-                order = client.orders.post_order(
-                    order_id=str(datetime.utcnow().timestamp()),
-                    figi=figi,
-                    quantity=quantity_lots,
-                    price=trade_help.to_quotation(price),
-                    account_id=account_id,
-                    direction=OrderDirection.ORDER_DIRECTION_SELL,
-                    order_type=OrderType.ORDER_TYPE_LIMIT,
-                )
+                try:
+                    order = client.orders.post_order(
+                        order_id=str(datetime.utcnow().timestamp()),
+                        figi=figi,
+                        quantity=quantity_lots,
+                        price=trade_help.to_quotation(price),
+                        account_id=account_id,
+                        direction=OrderDirection.ORDER_DIRECTION_SELL,
+                        order_type=OrderType.ORDER_TYPE_LIMIT,
+                    )
+                except:
+                    return False
             else:
-                order = client.orders.post_order(
-                    order_id=str(datetime.utcnow().timestamp()),
-                    figi=figi,
-                    quantity=quantity_lots,
-                    account_id=account_id,
-                    direction=OrderDirection.ORDER_DIRECTION_SELL,
-                    order_type=OrderType.ORDER_TYPE_MARKET,
-                )
+                try:
+                    order = client.orders.post_order(
+                        order_id=str(datetime.utcnow().timestamp()),
+                        figi=figi,
+                        quantity=quantity_lots,
+                        account_id=account_id,
+                        direction=OrderDirection.ORDER_DIRECTION_SELL,
+                        order_type=OrderType.ORDER_TYPE_MARKET,
+                    )
+                except:
+                    return False
 
     write_operation(order=order, user_id=user_id, via=via, account_id=account_id, account_type=account_type)
 
@@ -232,6 +244,7 @@ def write_operation(order, user_id, account_id, account_type, via="else"):
         commission, currency, message, via)
     cursor.execute("INSERT INTO OPERATIONS (user_id, account_id, account_type, order_id, date_op, time_op, direction, "
                    "figi, ticker, name, "
-                   "quantity_lots, in_lot, quantity_total, price_position, price_total, commission,currency, message, via) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?);",
+                   "quantity_lots, in_lot, quantity_total, price_position, price_total, commission,currency, message, "
+                   "via) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?);",
                    operation)
     connection.commit()

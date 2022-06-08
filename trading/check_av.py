@@ -1,5 +1,4 @@
 from config.personal_data import get_account, get_account_type
-from trading.get_account_info import get_all_currency
 from tinkoff.invest import Client
 from config.personal_data import get_token
 from datetime import datetime, timedelta
@@ -13,13 +12,16 @@ def check_money(user_id, price, quantity, currency, account_id="", account_type=
     if account_type == "":
         account_type = get_account_type(user_id=user_id)
 
-    currency_df = get_all_currency(user_id=user_id, account_id=account_id, account_type=account_type)
+    with Client(get_token(user_id)) as client:
+        if account_type == "sandbox":
+            positions = client.sandbox.get_sandbox_positions(account_id=account_id)
+        else:
+            positions = client.operations.get_positions(account_id=account_id)
 
-    sum = price * quantity
+        for i in positions.money:
+            if (i.currency == currency) and ((i.units + (i.nano * 1e-9)) > price * quantity * 1.03):
+                return True
 
-    for i in currency_df.index:
-        if currency_df['currency'][i].upper() == currency.upper() and currency_df['sum'][i] > sum * 1.03:
-            return True
     return False
 
 

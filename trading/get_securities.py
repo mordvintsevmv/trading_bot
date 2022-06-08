@@ -59,7 +59,6 @@ def security_incr_by_figi(figi, user_id):
 
 
 def security_by_figi(user_id, figi):
-
     with Client(get_token(user_id)) as client:
         try:
             security = client.instruments.get_instrument_by(id_type=1, id=figi).instrument
@@ -75,15 +74,14 @@ def security_by_figi(user_id, figi):
 
 
 def get_security_list(user_id, name, security_type="share"):
-    examples = []
 
     with Client(get_token(user_id)) as client:
 
+        examples = []
+
         try:
-
-            examples += client.instruments.get_instrument_by(id_type=1, id=name).instrument
+            examples += [client.instruments.get_instrument_by(id_type=1, id=name).instrument]
             return examples
-
         except:
 
             if security_type == "share":
@@ -106,4 +104,4 @@ def get_security_list(user_id, name, security_type="share"):
                     if name.lower() in i.name.lower():
                         examples += [i]
 
-    return examples
+        return examples

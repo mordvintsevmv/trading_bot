@@ -26,16 +26,16 @@ async def choose_account(message: Message):
         acc = client.users.get_accounts()
         acc_sand = client.sandbox.get_sandbox_accounts()
         for i in acc.accounts:
-            if i.name.upper() != "Инвесткопилка".upper():
-                choose_account.add(InlineKeyboardButton(text=f"{i.name}", callback_data=f"account:{i.id}:{i.name}"))
+            if i.type == 1:
+                choose_account.add(InlineKeyboardButton(text=f"{i.name}", callback_data=f"account:{i.id}:{i.type}:{i.access_level}"))
         for i in acc_sand.accounts:
-            choose_account.add(InlineKeyboardButton(text=f"Песочница", callback_data=f"account:{i.id}:sandbox"))
+            choose_account.add(InlineKeyboardButton(text=f"Песочница", callback_data=f"account:{i.id}:sandbox:{i.access_level}"))
 
     await message.answer("Выберите аккаунт:", reply_markup=choose_account)
 
 
 """
-    Второй хендлер, который испольняется в состоянии s_wait_figi
+    Второй хэндлер, который исполняется в состоянии s_wait_figi
 """
 
 
@@ -45,11 +45,12 @@ async def account_finish(callback_query):
 
     account_id = data[1]
     account_type = data[2]
+    account_access = data[3]
 
     connection = sl.connect("db/BotDB.db")
     cursor = connection.cursor()
-    cursor.execute('UPDATE users SET account_id = ?, account_type = ? WHERE user_id = ?;',
-                      (account_id, account_type, callback_query.from_user.id))
+    cursor.execute('UPDATE users SET account_id = ?, account_type = ?, account_access = ? WHERE user_id = ?;',
+                      (account_id, account_type, account_access, callback_query.from_user.id))
     connection.commit()
 
     await bot.delete_message(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id)

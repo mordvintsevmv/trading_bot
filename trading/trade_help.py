@@ -18,7 +18,7 @@ from pycbrf.toolbox import ExchangeRates
 '''
 
 
-def quotation_to_float(quotation):
+def quotation_to_float(quotation: Quotation):
     sum = quotation.units + (quotation.nano * 1e-9)
     return sum
 
@@ -88,18 +88,18 @@ def is_in_portfolio(figi, user_id, account_id="", account_type=""):
 
 def get_price_figi(figi, user_id):
     with Client(get_token(user_id)) as client:
-        candle = client.market_data.get_candles(
-            figi=figi,
-            from_=datetime.utcnow() - timedelta(days=7),
-            to=datetime.utcnow(),
-            interval=CandleInterval.CANDLE_INTERVAL_HOUR
-        )
-
+        try:
+            candle = client.market_data.get_candles(
+                figi=figi,
+                from_=datetime.utcnow() - timedelta(days=7),
+                to=datetime.utcnow(),
+                interval=CandleInterval.CANDLE_INTERVAL_HOUR)
     # Выбираем последнюю доступную свечку
     # Получаем среднюю стоимость бумаги путём складывания самой высокой и самой низкой цен
-    average_price = ((quotation_to_float(candle.candles[-1].high) + quotation_to_float(candle.candles[-1].low)) / 2)
-
-    return average_price
+            average_price = ((quotation_to_float(candle.candles[-1].high) + quotation_to_float(candle.candles[-1].low)) / 2)
+            return average_price
+        except:
+            return 0.0
 
 
 '''

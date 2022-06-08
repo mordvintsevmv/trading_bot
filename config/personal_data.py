@@ -32,6 +32,13 @@ def get_account_type(user_id):
     return account_type
 
 
+def get_account_access(user_id):
+    connection = sl.connect("db/BotDB.db")
+    cursor = connection.cursor()
+
+    account_type = cursor.execute('SELECT account_access FROM users WHERE user_id = ?', (user_id,)).fetchone()[0]
+    return account_type
+
 load_dotenv()
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")

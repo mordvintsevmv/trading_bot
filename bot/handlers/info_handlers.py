@@ -6,6 +6,7 @@ from trading.get_securities import security_name_by_figi
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from trading.place_order import cancel_order
 from trading.trade_help import get_currency_sing
+from config.personal_data import get_account_access
 
 """
 
@@ -166,7 +167,8 @@ async def get_orders(message: Message):
         no_orders = False
 
         cancel_order_keyboard = InlineKeyboardMarkup()
-        cancel_order_keyboard.add(InlineKeyboardButton(text=f"Отменить ордер", callback_data=f"cancel_order:{order_df['order_id'][i]}"))
+        if get_account_access(user_id=message.from_user.id) == 1:
+            cancel_order_keyboard.add(InlineKeyboardButton(text=f"Отменить ордер", callback_data=f"cancel_order:{order_df['order_id'][i]}"))
 
         if order_df['direction'][i] == 2:
             direction = "Продажа"

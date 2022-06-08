@@ -5,13 +5,14 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from db.create_tables import create_tables
 from config.crypto_rsa import create_rsa_keys
 from trading.get_securities import get_security_list
-from trading.place_order import buy_order
+from tinkoff.invest import Client, OrderDirection, OrderType
+
+from tinkoff.invest import Client
+from config.personal_data import get_token, get_account
 
 loop = asyncio.get_event_loop()
 bot = Bot(BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher(bot, loop=loop, storage=MemoryStorage())
-
-
 
 if __name__ == "__main__":
 
@@ -21,5 +22,6 @@ if __name__ == "__main__":
     create_tables()
     create_rsa_keys()
 
-    executor.start_polling(dp, on_startup=start)
+    # print(get_security_list(user_id=699146725, name="Магнит"))
 
+    executor.start_polling(dp, on_startup=start)

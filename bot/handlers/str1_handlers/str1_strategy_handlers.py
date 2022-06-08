@@ -1,7 +1,7 @@
 from main import dp, bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from trading.strategy.str1 import statistic_str1
-from config.personal_data import get_account
+from config.personal_data import get_account, get_account_access
 import sqlite3 as sl
 from trading.get_securities import security_name_by_figi
 
@@ -28,6 +28,9 @@ async def str1_stat(callback_query):
     with open(f"img/str1/graph/15_min_{figi}.png", "rb") as graph_15:
         await bot.send_photo(chat_id=callback_query.from_user.id, photo=graph_15)
 
+    with open(f"img/str1/ind/15_min_{figi}.png", "rb") as ind_15:
+        await bot.send_photo(chat_id=callback_query.from_user.id, photo=ind_15)
+
     if stat_15[0]:
         await bot.send_message(chat_id=callback_query.from_user.id, text=f"📈Цена растёт📈\n{stat_15[1]}")
     else:
@@ -39,6 +42,9 @@ async def str1_stat(callback_query):
 
     with open(f"img/str1/graph/hour_{figi}.png", "rb") as graph_hour:
         await bot.send_photo(chat_id=callback_query.from_user.id, photo=graph_hour)
+
+    with open(f"img/str1/ind/hour_{figi}.png", "rb") as ind_hour:
+        await bot.send_photo(chat_id=callback_query.from_user.id, photo=ind_hour)
 
     if stat_hour[0]:
         await bot.send_message(chat_id=callback_query.from_user.id, text=f"📈Цена растёт📈\n{stat_hour[1]}")
@@ -172,16 +178,11 @@ async def str1_list(callback_query):
                                 (user_id, account_id)).fetchall()
 
     for line in securities:
+
         str1_menu = []
+
         stat_str1_button = InlineKeyboardButton(text=f"📈",
                                                 callback_data=f"str1:stat:show:{user_id}:{line[0]}")
-
-        if line[2] == "True":
-            status_str1_button = InlineKeyboardButton(text=f"⏹",
-                                                      callback_data=f"str1:trade:False:{user_id}:{line[0]}")
-        else:
-            status_str1_button = InlineKeyboardButton(text=f"▶️",
-                                                      callback_data=f"str1:trade:True:{user_id}:{line[0]}")
 
         if line[3] == "True":
             status_notif_button = InlineKeyboardButton(text=f"🔔",
@@ -189,9 +190,20 @@ async def str1_list(callback_query):
         else:
             status_notif_button = InlineKeyboardButton(text=f"🔕", callback_data=f"str1:notif:True:{user_id}:{line[0]}")
 
-        settings_str1_button = InlineKeyboardButton(text=f"⚙", callback_data=f"str1:config:start:{user_id}:{line[0]}")
+        if get_account_access(user_id=user_id) == 1:
+            if line[2] == "True":
+                status_str1_button = InlineKeyboardButton(text=f"⏹",
+                                                          callback_data=f"str1:trade:False:{user_id}:{line[0]}")
+            else:
+                status_str1_button = InlineKeyboardButton(text=f"▶️",
+                                                          callback_data=f"str1:trade:True:{user_id}:{line[0]}")
 
-        str1_menu.append([stat_str1_button, status_str1_button, status_notif_button, settings_str1_button])
+            settings_str1_button = InlineKeyboardButton(text=f"⚙", callback_data=f"str1:config:start:{user_id}:{line[0]}")
+
+            str1_menu.append([stat_str1_button, status_str1_button, status_notif_button, settings_str1_button])
+
+        else:
+            str1_menu.append([stat_str1_button, status_notif_button])
 
         ema_adx_macd_keyboard = InlineKeyboardMarkup(
             inline_keyboard=
@@ -204,11 +216,11 @@ async def str1_list(callback_query):
 def edit_str1_keyboard(user_id, figi):
 
     account_id = get_account(user_id)
-    conn = sl.connect("db/str1.db")
+    conn = sl.connect("db/BotDB.db")
     cur = conn.cursor()
 
     share = cur.execute(
-        'SELECT name,trade_status,notif_status FROM CONFIG WHERE user_id = ? AND account_id = ? AND figi = ? ',
+        'SELECT name,trade_status,notif_status FROM str1_config WHERE user_id = ? AND account_id = ? AND figi = ? ',
         (user_id, account_id, figi)).fetchone()
 
     str1_menu = []
@@ -216,22 +228,26 @@ def edit_str1_keyboard(user_id, figi):
     stat_str1_button = InlineKeyboardButton(text=f"📈",
                                             callback_data=f"str1:stat:show:{user_id}:{figi}")
 
-    if share[1] == "True":
-        status_str1_button = InlineKeyboardButton(text=f"⏹",
-                                                  callback_data=f"str1:trade:False:{user_id}:{figi}")
-    else:
-        status_str1_button = InlineKeyboardButton(text=f"▶️",
-                                                  callback_data=f"str1:trade:True:{user_id}:{figi}")
-
     if share[2] == "True":
         status_notif_button = InlineKeyboardButton(text=f"🔔",
                                                    callback_data=f"str1:notif:False:{user_id}:{figi}")
     else:
         status_notif_button = InlineKeyboardButton(text=f"🔕", callback_data=f"str1:notif:True:{user_id}:{figi}")
 
-    settings_str1_button = InlineKeyboardButton(text=f"⚙", callback_data=f"str1:config:start:{user_id}:{figi}")
+    if get_account_access(user_id=user_id) == 1:
+        if share[1] == "True":
+            status_str1_button = InlineKeyboardButton(text=f"⏹",
+                                                      callback_data=f"str1:trade:False:{user_id}:{figi}")
+        else:
+            status_str1_button = InlineKeyboardButton(text=f"▶️",
+                                                      callback_data=f"str1:trade:True:{user_id}:{figi}")
 
-    str1_menu.append([stat_str1_button, status_str1_button, status_notif_button, settings_str1_button])
+        settings_str1_button = InlineKeyboardButton(text=f"⚙", callback_data=f"str1:config:start:{user_id}:{figi}")
+
+        str1_menu.append([stat_str1_button, status_str1_button, status_notif_button, settings_str1_button])
+
+    else:
+        str1_menu.append([stat_str1_button, status_notif_button])
 
     ema_adx_macd_keyboard = InlineKeyboardMarkup(
         inline_keyboard=

@@ -6,6 +6,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from trading.get_securities import get_security_list
 from trading.place_order import buy_order
 from trading.trade_help import get_price_figi, get_currency_sing
+from config.personal_data import get_account_access
 
 """
 
@@ -48,12 +49,32 @@ async def search_finish(message: Message, state: FSMContext):
             choose_share_keyboard.add(
                 InlineKeyboardButton(text=f"Анализ",
                                      callback_data=f"str1:stat:show:{message.from_user.id}:{security.figi}"))
-            choose_share_keyboard.add(
-                InlineKeyboardButton(text=f"Купить 1 лот", callback_data=f"sfb:buy_now:{security.figi}"))
+            if get_account_access(user_id=message.from_user.id) == 1:
+                choose_share_keyboard.add(
+                    InlineKeyboardButton(text=f"Купить 1 лот", callback_data=f"sfb:buy_now:{security.figi}"))
+
+            try:
+                inst_type = security.instrument_type
+
+                if inst_type == "share":
+                    inst = "Акции"
+                elif inst_type == "future":
+                    inst = "Фьючерсы"
+                elif inst_type == "bond":
+                    inst = "Бонды"
+                elif inst_type == "etf":
+                    inst = "ETF"
+                elif inst_type == "currency":
+                    inst = "Валюта"
+                else:
+                    inst = inst_type
+
+            except:
+                inst = "Акции"
 
             await message.answer(
                 text=
-                f"🧾<b>{security.name}</b>\n"
+                f"🧾<b>{inst} {security.name}</b>\n"
                 f"FIGI: {security.figi}\n\n"
                 f"Бумаг в лоте: {security.lot}\n"
                 f"Средняя цена бумаги: {round(get_price_figi(user_id=message.from_user.id, figi=security.figi), 4)}{get_currency_sing(security.currency)}\n"
@@ -79,5 +100,10 @@ async def search_buy_now(callback_query):
     data = callback_query.data.split(":")
     figi = data[2]
 
-    buy_order(figi=figi, user_id=callback_query.from_user.id, quantity_lots=1, price=0.0, via="bot")
-    await bot.send_message(chat_id=callback_query.from_user.id, text=f"Покупка успешно выполнена!")
+    order = buy_order(figi=figi, user_id=callback_query.from_user.id, quantity_lots=1, price=0.0, via="bot")
+
+    if order:
+        await bot.send_message(chat_id=callback_query.from_user.id, text=f"Покупка успешно выполнена!")
+    else:
+        await bot.send_message(chat_id=callback_query.from_user.id, text="Ошибка! Вероятно, у Вас мало средств на счёте!")
+

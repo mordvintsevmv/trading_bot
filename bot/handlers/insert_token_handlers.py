@@ -15,7 +15,6 @@ from config.crypto_rsa import encrypt
 
 """
 
-
 """
     Создаём состояние ожидания
 """
@@ -37,7 +36,7 @@ async def choose_token_start(message: Message):
 
 
 """
-    Второй хендлер, который испольняется в состоянии s_wait_figi
+    Второй хэндлер, который исполняется в состоянии s_wait_figi
 """
 
 
@@ -54,14 +53,13 @@ async def choose_token_finish(message: Message, state: FSMContext):
 
             encrypted_token = encrypt(token)
             account_id = acc.accounts[0].id
-            if acc.accounts[0].name.upper() == "Песочница".upper():
-                account_type = "sandbox"
-            else:
-                account_type = acc.accounts[0].name
+            account_type = acc.accounts[0].type
+            account_access = acc.accounts[0].access_level
 
-            cursor.execute('UPDATE users SET token = ?, account_id = ?, account_type = ? WHERE user_id = ?;',
-                        (sl.Binary(encrypted_token), account_id, account_type,
-                         message.from_user.id))
+            cursor.execute('UPDATE users SET token = ?, account_id = ?, account_type = ?, account_access = ? WHERE '
+                           'user_id = ?;',
+                           (sl.Binary(encrypted_token), account_id, account_type, account_access,
+                            message.from_user.id))
             connection.commit()
 
             await message.answer("Ваш токен добавлен!", reply_markup=get_start_menu(message.from_user.id))

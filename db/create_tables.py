@@ -10,6 +10,7 @@ def create_tables():
                        'user_id TEXT,'
                        'account_id TEXT,'
                        'account_type TEXT,'
+                       'account_access TEXT,'
                        'order_id TEXT,'
                        'date_op TEXT,'
                        'time_op TEXT,'
@@ -33,6 +34,7 @@ def create_tables():
                        'user_id TEXT,'
                        'account_id TEXT,'
                        'account_type TEXT,'
+                       'account_access TEXT,'
                        'figi TEXT,'
                        'name TEXT,'
                        'trade_status TEXT,'
@@ -56,7 +58,8 @@ def create_tables():
                        'token TEXT,'
                        'account_id TEXT,'
                        'account_type TEXT,'
-                       'access_level TEXT)')
+                       'account_access TEXT,'
+                       'bot_access_level TEXT)')
 
     connection_message = sl.connect("db/message.db")
 
