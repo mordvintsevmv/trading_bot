@@ -31,6 +31,7 @@ class TokenWaiting(StatesGroup):
 
 @dp.message_handler(state="*", text="Изменить Токен")
 async def choose_token_start(message: Message):
+    await message.answer("Внимание! При изменении токена все торговые стратегии будут удалены!")
     await message.answer("Введите токен!", reply_markup=ReplyKeyboardRemove())
     await TokenWaiting.next()
 
@@ -60,6 +61,10 @@ async def choose_token_finish(message: Message, state: FSMContext):
                            'user_id = ?;',
                            (sl.Binary(encrypted_token), account_id, account_type, account_access,
                             message.from_user.id))
+
+            cursor.execute('DELETE FROM str1_config WHERE user_id = ?;',
+                           (message.from_user.id,))
+
             connection.commit()
 
             await message.answer("Ваш токен добавлен!", reply_markup=get_start_menu(message.from_user.id))

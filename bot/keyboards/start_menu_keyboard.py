@@ -36,6 +36,9 @@ def get_start_menu(user_id):
                     KeyboardButton(text="Изменить Токен"),
                     KeyboardButton(text="Изменить Аккаунт"),
                 ],
+                [
+                    KeyboardButton(text="Удалить все торговые стратегии"),
+                ],
             ],
             resize_keyboard=True
         )
@@ -70,6 +73,10 @@ def get_start_menu(user_id):
                     KeyboardButton(text="Изменить Токен"),
                     KeyboardButton(text="Изменить Аккаунт"),
                 ],
+                [
+                    KeyboardButton(text="Удалить все торговые стратегии"),
+                ],
+
             ],
             resize_keyboard=True
         )

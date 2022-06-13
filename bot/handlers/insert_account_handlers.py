@@ -31,6 +31,8 @@ async def choose_account(message: Message):
         for i in acc_sand.accounts:
             choose_account.add(InlineKeyboardButton(text=f"Песочница", callback_data=f"account:{i.id}:sandbox:{i.access_level}"))
 
+    await message.answer("Внимание! Не забудьте остановить торговые стратегии (в случае необходимости) перед сменой "
+                         "аккаунта!")
     await message.answer("Выберите аккаунт:", reply_markup=choose_account)
 
 
