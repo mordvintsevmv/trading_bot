@@ -16,6 +16,8 @@ from trading.trade_help import in_lot_figi
 from trading.get_securities import security_name_by_figi
 from trading.check_av import check_time
 from config.personal_data import get_account_type, get_account_access
+from trading.trade_help import quotation_to_float
+from trading.trade_help import get_currency_sing
 
 """
 
@@ -72,13 +74,24 @@ async def start_sell(message):
                     else:
                         inst = i.instrument_type
 
-                    await bot.send_message(chat_id=user_id, text=
-                    f"🧾<b>{inst} {security_name_by_figi(figi=i.figi, user_id=user_id)}</b>\n"
-                    f"FIGI: {i.figi}\n\n"
-                    f"Бумаг в лоте: {in_lot_figi(figi=i.figi, user_id=user_id)}\n"
-                    f"Средняя цена бумаги: {round(get_price_figi(user_id=message.from_user.id, figi=i.figi), 4)}{get_currency_sing(i.average_position_price.currency)}\n "
-                    f"Итого стоимость: {round(in_lot_figi(figi=i.figi, user_id=user_id) * get_price_figi(user_id=message.from_user.id, figi=i.figi), 4)}{get_currency_sing(i.average_position_price.currency)}\n",
-                                           reply_markup=sell_keyboard)
+                    if get_account_type(message.from_user.id) == "sandbox":
+                        text = f"🧾<b>{inst} {security_name_by_figi(figi=i.figi, user_id=user_id)}</b>\n"\
+                        f"FIGI: {i.figi}\n\n"\
+                        f"Лотов в портфеле: {int(quotation_to_float(i.quantity_lots))}\n"\
+                        f"Бумаг в лоте: {in_lot_figi(figi=i.figi, user_id=user_id)}\n\n"\
+                        f"Средняя цена бумаги: {round(quotation_to_float(i.average_position_price), 4)}{get_currency_sing(i.average_position_price.currency)}\n"\
+                        f"Средняя цена лота: {round(quotation_to_float(i.average_position_price)*in_lot_figi(figi=i.figi, user_id=user_id), 4)}{get_currency_sing(i.average_position_price.currency)}\n\n"\
+                        f"Итого стоимость: {round(quotation_to_float(i.average_position_price)*quotation_to_float(i.quantity), 4)}{get_currency_sing(i.average_position_price.currency)}\n "
+                    else:
+                        text = f"🧾<b>{inst} {security_name_by_figi(figi=i.figi, user_id=user_id)}</b>\n"\
+                        f"FIGI: {i.figi}\n\n"\
+                        f"Лотов в портфеле: {int(quotation_to_float(i.quantity_lots))}\n"\
+                        f"Бумаг в лоте: {in_lot_figi(figi=i.figi, user_id=user_id)}\n\n"\
+                        f"Цена бумаги: {round(quotation_to_float(i.current_price), 4)}{get_currency_sing(i.current_price.currency)}\n"\
+                        f"Средняя цена лота: {round(quotation_to_float(i.current_price)*in_lot_figi(figi=i.figi, user_id=user_id), 4)}{get_currency_sing(i.average_position_price.currency)}\n\n"\
+                        f"Итого стоимость: {round(quotation_to_float(i.current_price)*quotation_to_float(i.quantity), 4)}{get_currency_sing(i.average_position_price.currency)}\n"
+
+                    await bot.send_message(chat_id=user_id, text=text,reply_markup=sell_keyboard)
 
         if empty_portfolio:
             await bot.send_message(chat_id=user_id, text=f"<b>У Вас нет бумаг!</b>")
@@ -137,40 +150,45 @@ async def s_choose_quantity(callback_query, state: FSMContext):
 @dp.message_handler(state=SellOrder.s_wait_quantity)
 async def s_choose_price(message: Message, state: FSMContext):
     # Получим цену бумаги
-    user_data = await state.get_data()
-    price = get_price_in_portfolio(user_data['s_chosen_figi'], user_id=message.from_user.id)
-
-    # Проверяем, есть ли такое количество лотов в портфеле
-    if get_lots_portfolio(user_data['s_chosen_figi'], user_id=message.from_user.id) >= int(message.text) > 0:
-
-        # Запишем данные о количестве в память
-        await state.update_data(s_chosen_quantity=message.text)
-
-        # Создаём клавиатуру с ценами
-        # Для удобства было добавлено несколько цен на 1% и 2% меньше/больше текущей
-        # При этом также можно ввести свою цену
-        price_keyboard = ReplyKeyboardMarkup()
-
-        price_keyboard.add(f"Лучшая цена")
-        price_keyboard.add(f"{round(price * 1.02, 5)}")
-        price_keyboard.add(f"{round(price * 1.01, 5)}")
-        price_keyboard.add(f"{round(price * 1.00, 6)}")
-        price_keyboard.add(f"{round(price * 0.99, 5)}")
-        price_keyboard.add(f"{round(price * 0.98, 5)}")
-        price_keyboard.add(f"Отмена")
-
-        # Включаем клавиатуру
-        await message.answer(f"Текущая стоимость бумаги: {price}\nУкажите цену за бумагу (или напишите свою):",
-                             reply_markup=price_keyboard)
-
-        # Переходим в следующее состояние
-        await SellOrder.s_wait_price.set()
-        return
-
-    # В случае ошибки повторяем запрос
+    try:
+        int(message.text)
+    except:
+        await message.answer("Вы ввели неверный формат!")
     else:
-        await message.answer(f"Введите доступное число лотов!")
-        return
+        user_data = await state.get_data()
+        price = get_price_in_portfolio(user_data['s_chosen_figi'], user_id=message.from_user.id)
+
+        # Проверяем, есть ли такое количество лотов в портфеле
+        if get_lots_portfolio(user_data['s_chosen_figi'], user_id=message.from_user.id) >= int(message.text) > 0:
+
+            # Запишем данные о количестве в память
+            await state.update_data(s_chosen_quantity=message.text)
+
+            # Создаём клавиатуру с ценами
+            # Для удобства было добавлено несколько цен на 1% и 2% меньше/больше текущей
+            # При этом также можно ввести свою цену
+            price_keyboard = ReplyKeyboardMarkup()
+
+            price_keyboard.add(f"Лучшая цена")
+            price_keyboard.add(f"{round(price * 1.02, 5)}")
+            price_keyboard.add(f"{round(price * 1.01, 5)}")
+            price_keyboard.add(f"{round(price * 1.00, 6)}")
+            price_keyboard.add(f"{round(price * 0.99, 5)}")
+            price_keyboard.add(f"{round(price * 0.98, 5)}")
+            price_keyboard.add(f"Отмена")
+
+            # Включаем клавиатуру
+            await message.answer(f"Укажите цену за бумагу (или напишите свою):",
+                                 reply_markup=price_keyboard)
+
+            # Переходим в следующее состояние
+            await SellOrder.s_wait_price.set()
+            return
+
+        # В случае ошибки повторяем запрос
+        else:
+            await message.answer(f"Введите доступное число лотов!")
+            return
 
 
 """
@@ -181,45 +199,54 @@ async def s_choose_price(message: Message, state: FSMContext):
 @dp.message_handler(state=SellOrder.s_wait_price)
 async def s_finish(message: types.Message, state: FSMContext):
     # Получаем цену бумаги
-    user_data = await state.get_data()
-    price = get_price_in_portfolio(user_data['s_chosen_figi'], user_id=message.from_user.id)
 
-    # Проверяем, что цена находится в разумных пределах
     if message.text == "Лучшая цена":
+
+        user_data = await state.get_data()
+
         # Продаём бумаги и выводим сообщение об этом
 
         await state.finish()
 
         order = sell_sfb(figi=user_data['s_chosen_figi'], price=0.0,
-                         quantity_lots=int(user_data['s_chosen_quantity']), user_id=message.from_user.id)
+                         quantity_lots=int(user_data['s_chosen_quantity']), user_id=message.from_user.id, via="bot")
 
         if order:
             await message.answer(
-                f"Продать акции {user_data['s_chosen_figi']} в количестве {user_data['s_chosen_quantity']} по лучшей цене.\n",
+                f"Продажа ценных бумаг {security_name_by_figi(order.figi, message.from_user.id)} в количестве {order.lots_requested} лотов по цене {quotation_to_float(order.initial_order_price)}{get_currency_sing(order.initial_order_price.currency)}.\n",
                 reply_markup=get_start_menu(message.from_user.id))
         else:
             await message.answer("Ошибка!")
 
-
-    elif (price * 1.20) > float(message.text) > (price * 0.80):
-        # Продаём бумаги и выводим сообщение об этом
-
-        await state.finish()
-
-        order = sell_sfb(figi=user_data['s_chosen_figi'], price=float(message.text),
-                         quantity_lots=int(user_data['s_chosen_quantity']), user_id=message.from_user.id, via="bot",
-                         account_id=get_account(user_id=user_data))
-
-        if order:
-            await message.answer(
-                f"Продать акции {user_data['s_chosen_figi']} в количестве {user_data['s_chosen_quantity']} по цене {message.text}.\n"
-                f"Суммарно на {round(float(user_data['s_chosen_quantity']) * in_lot_figi(user_data['s_chosen_figi'], user_id=message.from_user.id) * float(message.text), 3)}",
-                reply_markup=get_start_menu(message.from_user.id))
-        else:
-            await message.answer("Ошибка!")
-
-
-    # В случае ошибки повторяем запрос
     else:
-        await message.answer(f"Введите корректную стоимость!")
-        return
+        try:
+            float(message.text)
+        except:
+            await message.answer("Вы ввели неверный формат!")
+        else:
+            user_data = await state.get_data()
+            price = get_price_in_portfolio(user_data['s_chosen_figi'], user_id=message.from_user.id)
+
+            # Проверяем, что цена находится в разумных пределах
+
+            if (price * 1.20) > float(message.text) > (price * 0.80):
+                # Продаём бумаги и выводим сообщение об этом
+
+                await state.finish()
+
+                order = sell_sfb(figi=user_data['s_chosen_figi'], price=float(message.text),
+                                 quantity_lots=int(user_data['s_chosen_quantity']), user_id=message.from_user.id,
+                                 via="bot")
+
+                if order:
+                    await message.answer(
+                        f"Выставлен ордер на продажу ценных бумаг {security_name_by_figi(order.figi,message.from_user.id)} в количестве {order.lots_requested} лотов по цене {quotation_to_float(order.initial_order_price)}{get_currency_sing(order.initial_order_price.currency)}.\n",
+                        reply_markup=get_start_menu(message.from_user.id))
+                else:
+                    await message.answer("Ошибка!")
+
+
+            # В случае ошибки повторяем запрос
+            else:
+                await message.answer(f"Введите корректную стоимость!")
+                return

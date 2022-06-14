@@ -5,6 +5,7 @@ from config.personal_data import get_token, get_account_type, get_account
 import sqlite3 as sl
 import dataframe_image as dfi
 from trading.trade_help import get_exchange_rate, get_currency_sing
+from trading.get_securities import security_name_by_figi
 
 '''
 
@@ -93,6 +94,7 @@ def get_all_securities(user_id, account_id="", account_type=""):
             {
                 "figi": i.figi,
                 "instrument": i.instrument_type,
+                "security_name": security_name_by_figi(figi=i.figi,user_id=user_id),
                 "quantity": quotation_to_float(i.quantity),
                 "average_price": quotation_to_float(i.average_position_price),
                 "exp_yield": quotation_to_float(i.expected_yield),
@@ -100,7 +102,9 @@ def get_all_securities(user_id, account_id="", account_type=""):
                 "average_price_pt": quotation_to_float(i.average_position_price_pt),
                 "current_price": quotation_to_float(i.current_price),
                 "average_price_fifo": quotation_to_float(i.average_position_price_fifo),
-                "lots": quotation_to_float(i.quantity_lots)
+                "lots": quotation_to_float(i.quantity_lots),
+                "currency": i.average_position_price.currency,
+                "currency_sign": get_currency_sing(i.average_position_price.currency)
             } for i in portfolio.positions
         )
 
@@ -233,6 +237,7 @@ def get_my_order(user_id, account_id="", account_type=""):
                 "commission": quotation_to_float(i.initial_commission),
                 "serv_commission": quotation_to_float(i.service_commission),
                 "currency": i.currency,
+                "currency_sign": get_currency_sing(i.currency),
                 "figi": i.figi,
                 "direction": i.direction,
                 "price_one": quotation_to_float(i.initial_security_price),
@@ -257,11 +262,15 @@ def get_my_operations(user_id, account_id="", figi=""):
 
     if figi == "":
         operations = cursor.execute(
-            'SELECT id, user_id, account_id, account_type, order_id, date_op, time_op, direction, figi, name, ticker, quantity_lots, in_lot, quantity_total, price_position, price_total, commission, currency, message, via FROM operations WHERE user_id = ? AND account_id = ?',
+            'SELECT id, user_id, account_id, account_type, order_id, date_op, time_op, direction, figi, name, ticker, '
+            'quantity_lots, in_lot, quantity_total, price_position, price_total, commission, currency, message, '
+            'via FROM operations WHERE user_id = ? AND account_id = ?',
             (user_id, account_id)).fetchall()
     else:
         operations = cursor.execute(
-            'SELECT id, user_id, account_id, account_type, order_id, date_op, time_op, direction, figi, name, ticker, quantity_lots, in_lot, quantity_total, price_position, price_total, commission, currency, message, via FROM operations WHERE user_id = ? AND account_id = ? AND figi = ?',
+            'SELECT id, user_id, account_id, account_type, order_id, date_op, time_op, direction, figi, name, ticker, '
+            'quantity_lots, in_lot, quantity_total, price_position, price_total, commission, currency, message, '
+            'via FROM operations WHERE user_id = ? AND account_id = ? AND figi = ?',
             (user_id, account_id, figi)).fetchall()
 
     if not operations:

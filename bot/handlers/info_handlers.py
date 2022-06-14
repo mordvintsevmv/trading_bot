@@ -5,7 +5,6 @@ from aiogram.dispatcher.filters import Text
 from trading.get_securities import security_name_by_figi
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from trading.place_order import cancel_order
-from trading.trade_help import get_currency_sing
 from config.personal_data import get_account_access
 
 """
@@ -25,15 +24,11 @@ from config.personal_data import get_account_access
 async def get_balance(message: Message):
     currency_df = get_all_currency(message.from_user.id)
 
-    empty_wallet = True
-
     await message.answer(f"💸<b>Доступная валюта</b>💸")
 
     text = ""
 
     for i in currency_df.index:
-
-        empty_wallet = False
 
         if currency_df['exchange_rate'][i] != 0.0 and currency_df['exchange_rate'][i] != 1.0:
             text += (
@@ -44,10 +39,10 @@ async def get_balance(message: Message):
                 f"<b>{currency_df['name'][i]}</b>\n"
                 f"{round(currency_df['sum'][i], 2)}{currency_df['sign'][i]}\n\n")
 
-    if empty_wallet:
-        await message.answer(text="У Вас нет средств!")
-    else:
+    if text:
         await message.answer(text=text)
+    else:
+        await message.answer(text="У Вас нет средств!")
 
 
 """
@@ -67,21 +62,17 @@ async def get_share(message: Message):
     for i in security_df.index:
 
         inst = ""
-        name = ""
 
         if security_df['instrument'][i] == "share":
             inst = "Акции"
-            name = security_name_by_figi(security_df['figi'][i], user_id=message.from_user.id)
             empty_portfolio = False
 
         elif security_df['instrument'][i] == "bond":
             inst = "Бонды"
-            name = security_name_by_figi(security_df['figi'][i], user_id=message.from_user.id)
             empty_portfolio = False
 
         elif security_df['instrument'][i] == "etf":
             inst = "ETF"
-            name = security_name_by_figi(security_df['figi'][i], user_id=message.from_user.id)
             empty_portfolio = False
 
         elif security_df['instrument'][i] == "currency":
@@ -89,7 +80,6 @@ async def get_share(message: Message):
 
         elif security_df['instrument'][i] == "future":
             inst = "Фьючерсы"
-            name = security_name_by_figi(security_df['figi'][i], user_id=message.from_user.id)
             empty_portfolio = False
 
         if security_df['exp_yield'][i] >= 0:
@@ -98,15 +88,15 @@ async def get_share(message: Message):
             exp_yield = f"Ожидаемая убыль: {round(security_df['exp_yield'][i], 2)}₽"
 
         await message.answer(
-            f"🧾<b>{inst} {name}</b>\n"
+            f"🧾<b>{inst} {security_df['security_name'][i]}</b>\n"
             f"FIGI: {security_df['figi'][i]}\n\n"
             f"Лотов: {int(security_df['lots'][i])}\n"
             f"Всего: {round(security_df['quantity'][i], 2)}\n\n"
-            f"Средняя цена: {security_df['average_price'][i]}\n"
-            f"Средняя цена FIFO: {security_df['average_price_fifo'][i]}\n"
-            f"Текущая цена: {round(security_df['current_price'][i], 6)}\n\n"
-            f"НКД: {security_df['nkd'][i]}\n"
-            f"{exp_yield}\n"
+            f"Средняя цена: {security_df['average_price'][i]}{security_df['currency_sign'][i]}\n"
+            f"Средняя цена FIFO: {security_df['average_price_fifo'][i]}{security_df['currency_sign'][i]}\n"
+            f"Текущая цена: {round(security_df['current_price'][i], 6)}{security_df['currency_sign'][i]}\n\n"
+            f"НКД: {security_df['nkd'][i]}{security_df['currency_sign'][i]}\n"
+            f"{exp_yield}{security_df['currency_sign'][i]}\n"
         )
 
     if empty_portfolio:
@@ -175,8 +165,6 @@ async def get_orders(message: Message):
         else:
             direction = "Покупка"
 
-        currency = get_currency_sing(order_df['currency'][i])
-
         await message.answer(
             f"✅<b>{direction}</b> бумаг {security_name_by_figi(order_df['figi'][i], message.from_user.id)}\n"
             f"Открыт: {order_df['order_date'][i]}\n\n"
@@ -184,12 +172,12 @@ async def get_orders(message: Message):
             f"FIGI: {order_df['figi'][i]}\n\n"
             f"Лотов запрошено: {order_df['lots_req'][i]}\n"
             f"Лотов исполнено: {order_df['lots_ex'][i]}\n\n"
-            f"Сумма запрошена: {order_df['sum_req'][i]}{currency}\n"
-            f"Сумма исполнено: {order_df['sum_ex'][i]}{currency}\n\n"
-            f"Цена одной акции: {round(order_df['price_one'][i], 6)}{currency}\n\n"
-            f"Комиссия: {round(order_df['commission'][i], 3)}{currency}\n"
-            f"Комиссия сервиса: {round(cancel_order_keyboard['serv_commission'][i], 3)}{currency}\n\n"
-            f"Итого: {order_df['sum_total'][i]}{currency}\n",
+            f"Сумма запрошена: {order_df['sum_req'][i]}{order_df['currency_sign'][i]}\n"
+            f"Сумма исполнено: {order_df['sum_ex'][i]}{order_df['currency_sign'][i]}\n\n"
+            f"Цена одной акции: {round(order_df['price_one'][i], 6)}{order_df['currency_sign'][i]}\n\n"
+            f"Комиссия: {round(order_df['commission'][i], 3)}{order_df['currency_sign'][i]}\n"
+            f"Комиссия сервиса: {round(order_df['serv_commission'][i], 3)}{order_df['currency_sign'][i]}\n\n"
+            f"Итого: {order_df['sum_total'][i]}{order_df['currency_sign'][i]}\n",
             reply_markup=cancel_order_keyboard
         )
     if no_orders:
@@ -220,13 +208,17 @@ async def close_order(callback_query):
 @dp.message_handler(Text(contains="операции", ignore_case=True))
 async def get_operations(message: Message):
 
-    operations = get_my_operations(user_id=message.from_user.id)
-
-    if operations:
-        await message.answer(f"Ваши операции:")
-
-        with open(f"img/operations/all_operations_{message.from_user.id}.png", "rb") as operations_img:
-            await bot.send_photo(chat_id=message.from_user.id, photo=operations_img)
+    try:
+        operations = get_my_operations(user_id=message.from_user.id)
+    except:
+        await message.answer("Ошибка!")
 
     else:
-        await message.answer(f"У Вас пока не было операций!")
+        if operations:
+            await message.answer(f"Ваши операции:")
+
+            with open(f"img/operations/all_operations_{message.from_user.id}.png", "rb") as operations_img:
+                await bot.send_photo(chat_id=message.from_user.id, photo=operations_img)
+
+        else:
+            await message.answer(f"У Вас пока не было операций!")

@@ -67,7 +67,7 @@ def statistic_str1(figi, user_id, period=4, hour_graph=True):
 
     plt.clf()
 
-    style_df = df[-10:-1].drop(['time', 'open', 'low', 'high', 'orders'], axis=1)
+    style_df = df[-10:].drop(['time', 'open', 'low', 'high', 'orders'], axis=1)
     style_df = style_df.style.apply(color_macd)
 
     if hour_graph:

@@ -52,7 +52,7 @@ async def account_finish(callback_query):
     connection = sl.connect("db/BotDB.db")
     cursor = connection.cursor()
     cursor.execute('UPDATE users SET account_id = ?, account_type = ?, account_access = ? WHERE user_id = ?;',
-                      (account_id, account_type, account_access, callback_query.from_user.id))
+                      (str(account_id), str(account_type), str(account_access), callback_query.from_user.id))
     connection.commit()
 
     await bot.delete_message(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id)
